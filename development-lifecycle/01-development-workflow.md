@@ -1,49 +1,49 @@
 # 01 - Development Workflow (3-Phase Implementation Order)
 
-Urutan implementasi wajib saat membuat fitur baru, disusun secara terstruktur dalam 3 fase bertahap.
+Mandatory implementation order when creating a new feature, structured systematically across 3 incremental phases.
 
 ---
 
-## 📋 Alur Eksekusi 3 Fase
+## 📋 3-Phase Execution Flow
 
 ```
-PHASE 1: Domain Layer (Inti Bisnis Bebas Framework)
+PHASE 1: Domain Layer (Framework-Agnostic Business Core)
   ├── Entities (private constructor, static create, state transition methods)
-  ├── Value Objects (Ids extends Ulid, Money, Email, dll)
-  ├── Enums (State, Tipe, Mapping)
-  └── Domain Events (merekam perubahan state)
-  ✅ KONFIRMASI / UNIT TEST sebelum lanjut
+  ├── Value Objects (Ids extending Ulid, Money, Email, etc.)
+  ├── Enums (State, Types, Mapping)
+  └── Domain Events (recording state changes)
+  ✅ CONFIRMATION / UNIT TESTS before proceeding
 
-PHASE 2: Infrastructure Layer (Persistensi & Pemetaan)
-  ├── Repository Interface (di Domain)
-  ├── Eloquent Model (di Infrastructure)
-  ├── Database Migration (skema, index, constraints)
-  ├── Mapper (metode toDomain menggunakan reconstitute() & toModel)
-  └── Repository Implementation (di Infrastructure)
-  ✅ KONFIRMASI / INTEGRATION TEST sebelum lanjut
+PHASE 2: Infrastructure Layer (Persistence & Mapping)
+  ├── Repository Interface (in Domain)
+  ├── Eloquent Model (in Infrastructure)
+  ├── Database Migration (schema, indexes, constraints)
+  ├── Mapper (toDomain method using reconstitute() & toModel)
+  └── Repository Implementation (in Infrastructure)
+  ✅ CONFIRMATION / INTEGRATION TESTS before proceeding
 
 PHASE 3: Application & HTTP Layer (Use Cases & Delivery)
   ├── Commands & Command Handlers (return void, publish events)
   ├── Queries, Query Handlers, & DTOs/ReadModels
-  ├── FormRequest (rules() untuk format + getDto() untuk typed mapping)
-  ├── Action (Thin orchestrator, return Custom Resource XxxRes)
+  ├── FormRequest (rules() for format + getDto() for typed mapping)
+  ├── Action (Thin orchestrator, returns Custom Resource XxxRes)
   ├── ResService & XxxRes (implements JsonSerializable)
   ├── Controller (response()->json(res, status))
-  └── Routes API
-  ✅ KONFIRMASI / END-TO-END TEST
+  └── API Routes
+  ✅ CONFIRMATION / END-TO-END TESTS
 ```
 
 ---
 
 ## 🟢 PHASE 1: Domain Layer
 
-### 1.1 Buat Value Objects & Enums Terlebih Dahulu
+### 1.1 Create Value Objects & Enums First
 
 ```php
 // Value Object ID
 final class BookingId extends Ulid {}
 
-// Enum Status
+// Status Enum
 enum BookingStatus: string
 {
     case PENDING = 'pending';
@@ -52,11 +52,11 @@ enum BookingStatus: string
 }
 ```
 
-### 1.2 Buat Entity Domain
-- **Constructor `private`**.
-- Sediakan static method `create(...)` untuk inisialisasi awal.
-- Sediakan method eksplisit untuk transisi state (jangan ubah status secara langsung dari luar).
-- Rekam event menggunakan `recordLast(...)`.
+### 1.2 Create Domain Entity
+- **`private` Constructor**.
+- Provide static method `create(...)` for initial creation.
+- Provide explicit methods for state transitions (never mutate status directly from outside).
+- Record events using `recordLast(...)`.
 
 ```php
 final class Booking extends BaseEntity
@@ -111,7 +111,7 @@ final class Booking extends BaseEntity
 
 ## 🟡 PHASE 2: Infrastructure Layer
 
-### 2.1 Interface Repository di Domain
+### 2.1 Repository Interface in Domain
 ```php
 interface BookingRepositoryInterface
 {
@@ -133,8 +133,8 @@ class BookingModel extends Model
 }
 ```
 
-### 2.3 Mapper Menggunakan `reconstitute()`
-Gunakan method static `reconstitute()` di Entity (BUKAN Reflection):
+### 2.3 Mapper Using `reconstitute()`
+Use the static `reconstitute()` method on the Entity (NEVER Reflection):
 
 ```php
 final readonly class BookingMapper
@@ -165,7 +165,7 @@ final readonly class BookingMapper
 }
 ```
 
-### 2.4 Implementasi Repository
+### 2.4 Repository Implementation
 ```php
 final readonly class BookingRepository implements BookingRepositoryInterface
 {
@@ -199,8 +199,8 @@ final readonly class BookingRepository implements BookingRepositoryInterface
 ## 🔵 PHASE 3: Application & HTTP Layer
 
 ### 3.1 Command & Command Handler (Write Operation)
-- Command Handler **wajib return `void`**.
-- ID digenerate sebelum pemanggilan command.
+- Command Handlers **must return `void`**.
+- IDs are generated prior to command dispatch.
 
 ```php
 final readonly class CreateBookingCommand implements CommandInterface
@@ -309,29 +309,29 @@ final class BookingController
 
 ---
 
-## 📋 Checklist Eksekusi Tiap Fase
+## 📋 Phase Execution Checklist
 
-### Checklist Fase 1: Domain
-- [ ] Value Objects dibuat (misal: ID ULID, format tanggal, uang).
-- [ ] Enums status dan tipe didefinisikan.
-- [ ] Entity dibuat dengan `private __construct`.
-- [ ] Method `public static function create(...)` tersedia dengan domain event.
-- [ ] Method transisi state spesifik dibuat (tanpa setter publik).
-- [ ] Method `public static function reconstitute(...)` tersedia untuk hidrasi DB.
+### Phase 1 Checklist: Domain
+- [ ] Value Objects created (e.g., ULID IDs, date formats, money).
+- [ ] Status and type enums defined.
+- [ ] Entities created with `private __construct`.
+- [ ] `public static function create(...)` method available with domain event recording.
+- [ ] Explicit state transition methods created (no public setters).
+- [ ] `public static function reconstitute(...)` method available for DB hydration.
 
-### Checklist Fase 2: Infrastructure
-- [ ] Interface Repository dibuat di `Domain/Repositories/`.
-- [ ] Eloquent Model dibuat dengan `$incrementing = false` & `$keyType = 'string'`.
-- [ ] Migration dibuat lengkap dengan tipe kolom dan index foreign key.
-- [ ] Mapper dibuat menggunakan `reconstitute()` (tanpa Reflection).
-- [ ] Implementasi Repository dibuat di `Infrastructure/Persistence/`.
-- [ ] Binding Interface di Service Provider Laravel didaftarkan.
+### Phase 2 Checklist: Infrastructure
+- [ ] Repository interface created in `Domain/Repositories/`.
+- [ ] Eloquent Model created with `$incrementing = false` & `$keyType = 'string'`.
+- [ ] Database migration created complete with column types and foreign key indexes.
+- [ ] Mapper created using `reconstitute()` (without Reflection).
+- [ ] Repository implementation created in `Infrastructure/Persistence/`.
+- [ ] Interface binding registered in Laravel Service Provider.
 
-### Checklist Fase 3: Application + HTTP
-- [ ] Command dibuat (`CommandInterface`), Handler return `void`.
-- [ ] Query dibuat (`QueryInterface`), Handler return DTO / ReadModel.
-- [ ] FormRequest dibuat dengan method `rules()` dan `getDto()`.
-- [ ] Action dibuat tipis (≤ 20 baris) dan mengembalikan Custom Resource (`XxxRes`).
-- [ ] Custom Resource dibuat mengimplementasikan `JsonSerializable`.
-- [ ] Controller memanggil `$action($request->getDto())` dan membungkus `response()->json(res, status)`.
-- [ ] Route terdaftar di `routes/api.php`.
+### Phase 3 Checklist: Application + HTTP
+- [ ] Command created (`CommandInterface`), Handler returns `void`.
+- [ ] Query created (`QueryInterface`), Handler returns DTO / ReadModel.
+- [ ] FormRequest created with `rules()` and `getDto()` methods.
+- [ ] Action created thin (≤ 20 lines) and returns Custom Resource (`XxxRes`).
+- [ ] Custom Resource created implementing `JsonSerializable`.
+- [ ] Controller calls `$action($request->getDto())` and wraps with `response()->json(res, status)`.
+- [ ] Route registered in `routes/api.php`.

@@ -1,37 +1,37 @@
 # 04 - Infrastructure Layer & Persistence Patterns
 
-Panduan komprehensif implementasi lapisan infrastruktur: **Repositories**, **ReadModels**, **Table Objects**, **Entity Invariant Patterns (`reconstitute`)**, **Hydrators/Mappers**, dan **Migrations**.
+Comprehensive guide to implementing the Infrastructure Layer: **Repositories**, **ReadModels**, **Table Objects**, **Entity Invariant Patterns (`reconstitute`)**, **Hydrators/Mappers**, and **Migrations**.
 
 ---
 
-## 🏛️ Tanggung Jawab Lapisan Infrastruktur
+## 🏛️ Infrastructure Layer Responsibilities
 
-Lapisan infrastruktur berada di `src/{BoundedContext}/Infrastructure/` dan bertugas:
-1. Mengimplementasikan port/interface yang didefinisikan oleh Domain.
-2. Berkomunikasi dengan database (MySQL / PostgreSQL / Redis) menggunakan Query Builder atau Eloquent.
-3. Menjembatani skema database fisik dengan model domain murni melalui Mapper/Hydrator.
-4. Menangani tabel warisan (*legacy tables*) agar tidak mengotori kemurnian domain.
+The infrastructure layer resides in `src/{BoundedContext}/Infrastructure/` and is responsible for:
+1. Implementing ports/interfaces defined by the Domain.
+2. Interacting with databases (MySQL / PostgreSQL / Redis) using Query Builder or Eloquent.
+3. Bridging physical database schemas with pure domain models via Mappers/Hydrators.
+4. Handling legacy tables (*cruft*) to prevent contaminating domain purity.
 
 ---
 
 ## 🗄️ 1. Repositories
 
-### Aturan Pokok:
-1. **Stateless**: Repository tidak boleh menyimpan state internal. Seluruh dependensi (database connection, mapper) di-inject melalui constructor.
-2. **Return Type Valid**:
-   - ✅ `Entity` (untuk operasi aggregate penuh)
-   - ✅ `ReadModel` (untuk operasi query/read)
-   - ✅ `array<Entity>` atau `array<ReadModel>`
-   - ✅ Nilai skalar (`int`, `string`, `bool`, `float`) atau `null`
-   - ❌ **DILARANG mengembalikan raw Query Builder result (`stdClass`, `Collection<Model>`) langsung ke Application layer.**
-3. **Pemisahan Repository Besar**: Jika sebuah Repository bertumbuh terlalu besar (> 300 baris atau banyak query kompleks), pisahkan query baca ke class terpisah:
-   - `ClientRepository` (operasi write, save, delete, findById)
-   - `ClientRMQueryRepository` (operasi baca agregasi, statistik, proyeksi laporan)
+### Core Rules:
+1. **Stateless**: Repositories must not maintain internal state. All dependencies (database connections, mappers) are injected through the constructor.
+2. **Valid Return Types**:
+   - ✅ `Entity` (for full aggregate operations)
+   - ✅ `ReadModel` (for query/read operations)
+   - ✅ `array<Entity>` or `array<ReadModel>`
+   - ✅ Scalar values (`int`, `string`, `bool`, `float`) or `null`
+   - ❌ **FORBIDDEN to return raw Query Builder results (`stdClass`, `Collection<Model>`) directly to the Application Layer.**
+3. **Splitting Large Repositories**: If a Repository grows excessively large (> 300 lines or numerous complex queries), split read queries into a dedicated class:
+   - `ClientRepository` (write operations, save, delete, findById)
+   - `ClientRMQueryRepository` (aggregation read operations, statistics, report projections)
 
-### Contoh Interface & Implementasi:
+### Interface & Implementation Example:
 
 ```php
-// 1. Interface di Domain (src/Reservation/Domain/Repositories/BookingRepositoryInterface.php)
+// 1. Interface in Domain (src/Reservation/Domain/Repositories/BookingRepositoryInterface.php)
 namespace Src\Reservation\Domain\Repositories;
 
 use Src\Reservation\Domain\Entities\Booking;
@@ -46,7 +46,7 @@ interface BookingRepositoryInterface
     public function delete(BookingId $id): void;
 }
 
-// 2. Implementasi di Infrastructure (src/Reservation/Infrastructure/Persistence/BookingRepository.php)
+// 2. Implementation in Infrastructure (src/Reservation/Infrastructure/Persistence/BookingRepository.php)
 namespace Src\Reservation\Infrastructure\Persistence;
 
 use Illuminate\Support\Facades\DB;
@@ -91,20 +91,20 @@ final readonly class BookingRepository implements BookingRepositoryInterface
 
 ---
 
-## 📊 2. ReadModels (Pengganti `array<mixed>`)
+## 📊 2. ReadModels (Replacement for `array<mixed>`)
 
-**ATURAN MUTLAK:** Dilarang mengembalikan associative array tak bertipe (`array<array{...}>` atau `array<mixed>`) dari Repository query. **Gunakan ReadModel**.
+**ABSOLUTE RULE:** Returning untyped associative arrays (`array<array{...}>` or `array<mixed>`) from Repository queries is strictly forbidden. **Use ReadModels**.
 
-### Karakteristik ReadModel:
-- Terletak di `Domain/ReadModels/`
-- Nama berakhiran `RM` atau `ReadModel` (contoh: `BookingListItemRM`, `ClientStatsRM`)
-- Class berstatus `final readonly` dengan public properties.
-- **TIDAK memiliki logika bisnis**.
-- Didesain spesifik untuk membaca proyeksi data dari beberapa tabel tanpa harus meng-hydrate seluruh entity.
+### ReadModel Characteristics:
+- Located in `Domain/ReadModels/`
+- Names end with `RM` or `ReadModel` (e.g., `BookingListItemRM`, `ClientStatsRM`)
+- Class declared `final readonly` with public properties.
+- **NO business logic**.
+- Specifically designed to read multi-table projections without having to hydrate full entities.
 
-### Langkah Penerapan ReadModel:
+### Steps to Implement ReadModels:
 
-#### 1. Buat ReadModel di Domain:
+#### 1. Create the ReadModel in Domain:
 ```php
 namespace Src\Reservation\Domain\ReadModels;
 
@@ -121,7 +121,7 @@ final readonly class BookingListItemRM
 }
 ```
 
-#### 2. Deklarasikan di Interface Repository:
+#### 2. Declare in the Repository Interface:
 ```php
 interface BookingReadRepositoryInterface
 {
@@ -132,7 +132,7 @@ interface BookingReadRepositoryInterface
 }
 ```
 
-#### 3. Implementasikan di Repository:
+#### 3. Implement in Repository:
 ```php
 public function searchBookings(BookingSearchFilters $filters): array
 {
@@ -163,7 +163,7 @@ public function searchBookings(BookingSearchFilters $filters): array
 
 ## 🧱 3. Entity Construction Pattern (`create` vs `reconstitute`)
 
-Untuk melindungi invariant bisnis tanpa merusak kemampuan hidrasi database, entitas harus memisahkan jalur pembuatan data baru dan rekonstruksi data lama:
+To protect business invariants without impeding database hydration, entities must separate the path for new data creation from existing data reconstruction:
 
 ```php
 final class Booking extends BaseEntity
@@ -171,7 +171,7 @@ final class Booking extends BaseEntity
     /** @var array<BookingProduct> */
     private array $products = [];
 
-    // 1. Private Constructor: Mencegah new Booking(...) sembarangan
+    // 1. Private Constructor: Prevents uncontrolled `new Booking(...)` instantiation
     private function __construct(
         public readonly BookingId $id,
         public readonly ClientId $clientId,
@@ -180,10 +180,10 @@ final class Booking extends BaseEntity
         public int $partySize,
     ) {}
 
-    // 2. Factory Method untuk Data BARU:
-    // - Menegakkan aturan invariant bisnis
-    // - Status awal default (misal: PENDING)
-    // - Merekam Domain Event
+    // 2. Factory Method for NEW Data:
+    // - Enforces business invariant rules
+    // - Sets default initial status (e.g., PENDING)
+    // - Records Domain Events
     public static function create(
         BookingId $id,
         ClientId $clientId,
@@ -207,10 +207,10 @@ final class Booking extends BaseEntity
         return $booking;
     }
 
-    // 3. Factory Method untuk HIDRASI DARI DATABASE:
-    // - Menerima state apa adanya dari DB (bisa status apa pun)
-    // - TIDAK memicu Domain Event
-    // - HANYA digunakan di Mapper/Hydrator
+    // 3. Factory Method for DATABASE HYDRATION:
+    // - Accepts state as-is from DB (in any status)
+    // - Does NOT trigger Domain Events
+    // - ONLY used in Mappers/Hydrators
     public static function reconstitute(
         BookingId $id,
         ClientId $clientId,
@@ -239,7 +239,7 @@ final class Booking extends BaseEntity
 
 ## 🔄 4. Hydrators & Mappers
 
-Mapper/Hydrator bertanggung jawab mengubah format baris database ke Domain Entity dan sebaliknya:
+Mappers/Hydrators are responsible for converting database row formats into Domain Entities and vice versa:
 
 ```php
 final readonly class BookingMapper
@@ -283,20 +283,20 @@ final readonly class BookingMapper
 
 ---
 
-## 🕰️ 5. Menangani Legacy Database (Entity is Not Guilty)
+## 🕰️ 5. Handling Legacy Databases (Entity is Not Guilty)
 
-Jika database memiliki skema lama dengan kolom janggal (*cruft*):
-- ❌ **Dilarang mencemari Entity Domain** dengan field-field warisan yang tidak relevan dengan bisnis modern.
-- ✅ Simpan field warisan tersebut di Mapper/Repository `dehydrate()`:
+If the database has an older schema with awkward columns (*cruft*):
+- ❌ **Forbidden to pollute Domain Entities** with legacy fields irrelevant to modern business.
+- ✅ Handle legacy fields inside the Mapper/Repository during `dehydrate()`:
 
 ```php
-// Di Mapper:
+// In Mapper:
 public function toModel(Payment $payment): array
 {
     return [
         'id' => $payment->id->value(),
         'amount' => $payment->amount->value(),
-        // Field legacy ditangani di sini tanpa mengotori domain:
+        // Legacy fields handled here without polluting the domain:
         'legacy_order_id' => -1,
         'legacy_type_code' => 2,
     ];
@@ -305,9 +305,9 @@ public function toModel(Payment $payment): array
 
 ---
 
-## 📋 6. Table Objects (Konstanta Tabel & Tipe Kolom)
+## 📋 6. Table Objects (Table Constants & Column Types)
 
-Untuk mencegah kesalahan pengetikan nama tabel string di berbagai tempat:
+To prevent typos in table name strings across multiple files:
 
 ```php
 /**
@@ -322,6 +322,6 @@ final class BookingTable
     public const TABLE_NAME = 'bookings';
 }
 
-// Penggunaan di Repository:
+// Usage in Repository:
 DB::table(BookingTable::TABLE_NAME)->where('id', $id->value())->first();
 ```

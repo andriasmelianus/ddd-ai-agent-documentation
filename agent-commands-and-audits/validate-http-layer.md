@@ -12,62 +12,62 @@ triggers:
 
 # Universal AI Agent Audit: HTTP Layer Validation
 
-Prompt khusus bagi AI Agent untuk memvalidasi kepatuhan komponen HTTP Layer (`Apps/Api/`) terhadap standar: **Thin Action**, **FormRequest (`rules()` + `getDto()`)**, **Custom Resource (`XxxRes`)**, dan **Controller**.
+Dedicated prompt for AI Agents to validate HTTP Layer (`Apps/Api/`) compliance against standards: **Thin Action**, **FormRequest (`rules()` + `getDto()`)**, **Custom Resource (`XxxRes`)**, and **Controller**.
 
 ---
 
-## 🎯 Fokus Pemeriksaan HTTP Layer
+## 🎯 HTTP Layer Inspection Focus
 
-### 1. Validasi Action (`Apps/Api/**/*/Action.php`):
-- [ ] Panjang Action **≤ 20 baris**.
-- [ ] **TIDAK ADA** akses langsung ke `DB::` atau Eloquent `Model::`.
-- [ ] **TIDAK ADA** perulangan (`foreach`, `array_map`) untuk logika transformasi domain.
-- [ ] **TIDAK ADA** validasi bisnis rumit (validasi domain berada di Handler/Entity).
-- [ ] **TIDAK MENGEMBALIKAN** `JsonResponse` secara langsung.
-- [ ] **TIDAK MENGEMBALIKAN** DTO internal atau array mentah.
-- [ ] **HANYA MENGEMBALIKAN** Custom Resource (`XxxRes`) via `ResService`.
+### 1. Action Validation (`Apps/Api/**/*/Action.php`):
+- [ ] Action length is **≤ 20 lines**.
+- [ ] **NO** direct access to `DB::` or Eloquent `Model::`.
+- [ ] **NO** loops (`foreach`, `array_map`) for domain transformation logic.
+- [ ] **NO** complex business validation (domain validation belongs in Handlers/Entities).
+- [ ] **DOES NOT RETURN** `JsonResponse` directly.
+- [ ] **DOES NOT RETURN** internal DTOs or raw arrays.
+- [ ] **ONLY RETURNS** a Custom Resource (`XxxRes`) via `ResService`.
 
-### 2. Validasi FormRequest (`Apps/Api/**/*/Request.php`):
-- [ ] Boleh memiliki method `rules(): array` untuk validasi format dasar (required, min, max, email).
-- [ ] **WAJIB MEMILIKI** method `getDto(): XxxDto` untuk memetakan input request ke strongly-typed DTO.
-- [ ] Tidak meneruskan instance Request Laravel ke lapisan Application atau Domain.
+### 2. FormRequest Validation (`Apps/Api/**/*/Request.php`):
+- [ ] May have a `rules(): array` method for basic format validation (required, min, max, email).
+- [ ] **MUST HAVE** a `getDto(): XxxDto` method to map request inputs to strongly-typed DTOs.
+- [ ] Never pass the Laravel Request instance into the Application or Domain layers.
 
-### 3. Validasi Custom Resource & ResService:
-- [ ] Resource berada di `Apps/Api/{Modul}/Shared/XxxRes.php`.
-- [ ] Resource mengimplementasikan `\JsonSerializable` (atau meng-extend `BaseRes`).
-- [ ] **TIDAK MENGGUNAKAN** class bawaan `Illuminate\Http\Resources\Json\JsonResource`.
-- [ ] Nilai Value Objects diekstrak menggunakan `$this->id->value()`.
+### 3. Custom Resource & ResService Validation:
+- [ ] Resource is located in `Apps/Api/{Module}/Shared/XxxRes.php`.
+- [ ] Resource implements `\JsonSerializable` (or extends `BaseRes`).
+- [ ] **DOES NOT USE** the built-in `Illuminate\Http\Resources\Json\JsonResource` class.
+- [ ] Value Object values are extracted using `$this->id->value()`.
 
-### 4. Validasi Controller (`Apps/Api/**/Controller.php`):
-- [ ] Controller hanya mendelegasikan input DTO dari Request ke Action: `$resource = $action($request->getDto());`.
-- [ ] Controller bertanggung jawab membungkus Resource menjadi `JsonResponse`: `return response()->json($resource, 201);`.
+### 4. Controller Validation (`Apps/Api/**/Controller.php`):
+- [ ] Controller only delegates the input DTO from Request to Action: `$resource = $action($request->getDto());`.
+- [ ] Controller is responsible for wrapping the Resource into a `JsonResponse`: `return response()->json($resource, 201);`.
 
 ---
 
-## 📄 Format Laporan Validasi HTTP (`docs/Reports/YYYY-MM-DD-validate-http-layer.md`)
+## 📄 HTTP Validation Report Format (`docs/Reports/YYYY-MM-DD-validate-http-layer.md`)
 
 ```markdown
 # HTTP Layer Validation Report
 
 **Date:** YYYY-MM-DD  
-**Auditor Agent:** [Nama AI Agent]  
+**Auditor Agent:** [AI Agent Name]  
 
-## 🔍 Temuan Pemeriksaan
+## 🔍 Inspection Findings
 
-### 1. [Nama Action/Request] ([Lokasi File:Baris])
-- **Tingkat Keparahan**: CRITICAL / WARNING
-- **Pelanggaran**: [contoh: Action mengembalikan JsonResponse langsung]
-- **Kode Asli**:
+### 1. [Action/Request Name] ([File Location:Line])
+- **Severity**: CRITICAL / WARNING
+- **Violation**: [e.g., Action returning JsonResponse directly]
+- **Original Code**:
   ```php
   public function __invoke(CreateBookingDto $dto): JsonResponse { ... }
   ```
-- **Rekomendasi Refaktor**:
+- **Recommended Refactoring**:
   ```php
   public function __invoke(CreateBookingDto $dto): BookingCreatedRes { ... }
   ```
 
-## 📋 Ringkasan Aksi Perbaikan
-- [ ] Ubah return type Action menjadi `XxxRes`.
-- [ ] Pastikan Request memiliki `getDto()`.
-- [ ] Pindahkan konversi `response()->json(...)` ke Controller.
+## 📋 Remediation Action Summary
+- [ ] Change Action return type to `XxxRes`.
+- [ ] Ensure Request contains `getDto()`.
+- [ ] Relocate `response()->json(...)` conversion to the Controller.
 ```

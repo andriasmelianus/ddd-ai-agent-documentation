@@ -1,122 +1,122 @@
 # 02 - Requirements Engineering & Analysis Guide
 
-Panduan bagi AI Agent dan developer dalam menganalisis, memvalidasi, dan menyusun dokumen kebutuhan (*requirements*) sebelum masuk ke tahap perancangan teknis dan pengodean.
+Guide for AI Agents and developers in analyzing, validating, and structuring requirements documents prior to technical design and coding phases.
 
 ---
 
-## 💡 Filosofi Inti: "Analysis Informs, Never Blocks"
+## 💡 Core Philosophy: "Analysis Informs, Never Blocks"
 
-**PENGGUNA (USER) SELALU MEMEGANG KEPUTUSAN AKHIR.**
+**THE USER ALWAYS HOLDS THE FINAL DECISION.**
 
-| Prinsip | Makna Praktis |
+| Principle | Practical Meaning |
 |---|---|
-| **Analisis bersifat informatif** | Menyoroti risiko, celah logika, dan dampak kolateral — **BUKAN** memblokir pekerjaan. |
-| **User memutuskan** | Jika user berkata "lanjutkan / proceed", kita langsung mengeksekusi instruksi mereka. |
-| **Bukan birokrasi kaku** | Definisi matang sangat berharga untuk mencegah tambal sulam (*parches sobre parches*), namun tidak boleh menjadi penghambat laju kerja. |
+| **Analysis is informative** | Highlights risks, logical loopholes, and collateral impact — **NOT** blocking work. |
+| **User decides** | If the user says "proceed / continue", we execute their instructions immediately. |
+| **Not rigid bureaucracy** | Mature definitions are invaluable to prevent patch-upon-patch development (*parches sobre parches*), yet they must never stifle delivery velocity. |
 
-> 🤖 **Panduan Respons AI**:
-> - ❌ JANGAN PERNAH berkata: *"Tidak bisa melanjutkan sampai X dilengkapi."*
-> - ✅ SELALU katakan: *"Informasi X belum terdefinisi atau memiliki risiko Y. Apakah Anda ingin mendefinisikannya sekarang atau langsung melanjutkan implementasi?"*
+> 🤖 **AI Response Guidelines**:
+> - ❌ NEVER say: *"Cannot proceed until X is provided."*
+> - ✅ ALWAYS say: *"Information X is currently undefined or carries risk Y. Would you like to define it now or proceed directly with implementation?"*
 
 ---
 
-## 🗂️ 4 Kategori Requirement & Folder Kerja
+## 🗂️ 4 Requirement Categories & Working Directories
 
-Dokumen requirement disimpan di dalam `docs/working_docs/`:
+Requirements documents are stored under `docs/working_docs/`:
 
 ```
 docs/working_docs/
-├── epics/           # Inisiatif besar dengan justifikasi bisnis lengkap
-├── features/        # Fitur spesifik yang menginduk ke suatu Epic
-├── hotfixes/        # Perbaikan darurat bug di lingkungan produksi
-└── cases/           # Investigasi insiden teknis (HANYA INVESTIGASI, BUKAN KODE)
+├── epics/           # Major initiatives with comprehensive business justification
+├── features/        # Specific features subordinate to an Epic
+├── hotfixes/        # Emergency bug fixes in production environments
+└── cases/           # Technical incident investigations (INVESTIGATION ONLY, NO CODE)
 ```
 
-### Karakteristik Masing-Masing Tipe:
+### Characteristics of Each Type:
 
-| Tipe | Tujuan | Justifikasi Bisnis | Tingkat Analisis | Ada Koding? |
+| Type | Purpose | Business Justification | Analysis Depth | Coding Involved? |
 |---|---|---|---|---|
-| **Epic** | Inisiatif skala besar | Wajib (KPI, ROI) | Penuh (CRUD, State, Slicing) | Ya (bertahap) |
-| **Feature** | Bagian dari Epic | Referensi ke Parent Epic | Spesifik per fitur | Ya |
-| **Hotfix** | Perbaikan darurat | Masalah bug = Justifikasi | Problem-focused + Rollback | Ya (langsung) |
-| **Case** | Analisis insiden / bug | Tidak relevan | Investigasi Root Cause | **TIDAK ADA** |
+| **Epic** | Large-scale initiative | Mandatory (KPIs, ROI) | Full (CRUD, State, Slicing) | Yes (incremental) |
+| **Feature** | Component of an Epic | Reference to Parent Epic | Feature-specific | Yes |
+| **Hotfix** | Emergency repair | Bug issue = Justification | Problem-focused + Rollback | Yes (direct) |
+| **Case** | Incident / bug analysis | Not applicable | Root Cause Investigation | **NONE** |
 
 ---
 
-## 🔍 Langkah Analisis Kebutuhan Step-by-Step
+## 🔍 Step-by-Step Requirements Analysis Process
 
-### Langkah 0: Deteksi Tipe Requirement
-Deteksi tipe berdasarkan path dokumen (`/epics/`, `/features/`, `/hotfixes/`, `/cases/`).
-
----
-
-### Langkah 1 & 2: Identifikasi Entitas & CRUD Check
-Untuk setiap entitas bisnis utama yang terlibat, periksa kelengkapan siklus CRUD:
-- **Create**: Bagaimana cara entitas ini dibuat?
-- **Read / View**: Bagaimana cara detail entitas dilihat?
-- **Update**: Data apa saja yang boleh diubah setelah dibuat?
-- **Delete**: Bagaimana cara menghapusnya? (Hard delete vs Soft delete).
-- **List / Search**: Bagaimana cara mencari atau memfilter daftar entitas ini?
+### Step 0: Detect Requirement Type
+Detect the type based on document path (`/epics/`, `/features/`, `/hotfixes/`, `/cases/`).
 
 ---
 
-### Langkah 3: Analisis Status & Mesin State (MANDATORY)
-Hampir setiap entitas domain memiliki siklus hidup (*lifecycle*). AI wajib memverifikasi:
-1. **Initial Status**: Apa status awal saat entitas pertama kali dibuat? (contoh: `DRAFT`, `PENDING`).
-2. **Semua Kemungkinan Status**: Apa saja state yang valid?
-3. **Valid Transitions**: Transisi apa saja yang legal? (contoh: dari `PENDING` -> `CONFIRMED`, tapi dilarang dari `CANCELLED` -> `CONFIRMED`).
-4. **Trigger & Kondisi**: Apa pemicu tiap transisi? (Tindakan user, event otomatis, waktu kadaluarsa).
-5. **Efek Samping**: Apakah transisi memicu domain event, notifikasi, atau perubahan entitas lain?
+### Step 1 & 2: Entity Identification & CRUD Checks
+For every key business entity involved, verify the completeness of its CRUD lifecycle:
+- **Create**: How is this entity instantiated?
+- **Read / View**: How are entity details inspected?
+- **Update**: Which data points can be modified after creation?
+- **Delete**: How is it deleted? (Hard delete vs Soft delete).
+- **List / Search**: How is this entity listed, searched, or filtered?
 
 ---
 
-### Langkah 4 & 5: Pola Use Case & Operasi Invers (Kebalikan)
-Setiap kali ada satu aksi bisnis yang diajukan, periksa apakah aksi pasangannya dibutuhkan:
+### Step 3: Status & State Machine Analysis (MANDATORY)
+Almost every domain entity possesses a lifecycle. The AI must verify:
+1. **Initial Status**: What is the initial status when an entity is first created? (e.g., `DRAFT`, `PENDING`).
+2. **All Possible States**: What are all valid states?
+3. **Valid Transitions**: Which transitions are legal? (e.g., from `PENDING` -> `CONFIRMED`, but forbidden from `CANCELLED` -> `CONFIRMED`).
+4. **Triggers & Conditions**: What triggers each transition? (User action, automatic event, expiration timeout).
+5. **Side Effects**: Does the transition trigger domain events, notifications, or mutate other entities?
 
-| Aksi yang Diminta | Periksa Aksi Pasangan / Terkait |
+---
+
+### Step 4 & 5: Use Case Patterns & Inverse Operations
+Whenever a business action is proposed, inspect whether its counterpart action is necessary:
+
+| Requested Action | Inspect Counterpart / Related Actions |
 |---|---|
-| Buat Reservasi | Batalkan, Jadwalkan Ulang, Konfirmasi |
-| Tambah Kontak | Hapus Kontak, Update Kontak |
-| Aktifkan Fitur | Nonaktifkan Fitur |
-| Setujui (Approve) | Tolak (Reject), Minta Revisi |
-| Soft Delete | Restore (Kembalikan data) |
+| Create Booking | Cancel, Reschedule, Confirm |
+| Add Contact | Remove Contact, Update Contact |
+| Enable Feature | Disable Feature |
+| Approve | Reject, Request Revision |
+| Soft Delete | Restore |
 
 ---
 
-### Langkah 6: User Journey & Penanganan Kesalahan
-- Apa prasyarat (*preconditions*) sebelum aksi dilakukan?
-- Apa konsekuensi (*consequences*) setelah aksi berhasil?
-- **Error Recovery**: Apa yang terjadi jika user melakukan kesalahan input?
-- **Undo / Change Mind**: Bagaimana jika user berubah pikiran setelah menekan tombol submit?
+### Step 6: User Journey & Error Handling
+- What are the prerequisites (*preconditions*) before the action takes place?
+- What are the consequences (*consequences*) upon successful execution?
+- **Error Recovery**: What happens if the user inputs incorrect data?
+- **Undo / Change Mind**: What if the user changes their mind after submitting?
 
 ---
 
-### Langkah 7: Analisis Dampak Kolateral (Collateral Impact)
-Fitur baru jarang berdiri sendiri. AI wajib menganalisis dampaknya ke sistem yang sudah berjalan:
-1. **Breaking Changes**: Apakah perubahan ini merusak API contract atau database yang sudah ada?
-2. **Behavioral Changes**: Apakah perhitungan logika lama akan berubah hasilnya?
-3. **Data Impact**: Apakah data yang ada di database membutuhkan skrip migrasi data?
-4. **UI & API Impact**: Layar atau endpoint mana saja yang terpengaruh?
-5. **Performance Impact**: Apakah ada validasi baru yang berpotensi menambah query berat?
+### Step 7: Collateral Impact Analysis
+New features rarely exist in isolation. The AI must evaluate impacts on existing operational systems:
+1. **Breaking Changes**: Does this change break existing API contracts or database structures?
+2. **Behavioral Changes**: Will existing calculation logic yield altered outputs?
+3. **Data Impact**: Does existing database data require a data migration script?
+4. **UI & API Impact**: Which screens or endpoints are affected?
+5. **Performance Impact**: Does any new validation introduce heavy queries?
 
 ---
 
-### Langkah 8: Slicing Strategy (Pemotongan Fitur Besar)
-Jika requirement terlalu besar (> 7 use case, > 3 entitas, atau butuh waktu berminggu-minggu), **WAJIB dipecah menjadi beberapa slice/fase**:
-- **Slice 1 (MVP)**: Alur paling kritis yang dapat memberikan nilai langsung (contoh: Create + View).
-- **Slice 2**: Alur sekunder (Edit + Cancel).
-- **Slice 3**: Fitur penyempurna (Notifikasi + Reporting).
-- **Aturan Out of Scope**: Jangan membuang hal esensial (seperti validasi dan penanganan error dasar) ke "Out of Scope".
+### Step 8: Slicing Strategy (Breaking Down Large Features)
+If a requirement is too extensive (> 7 use cases, > 3 entities, or spans multiple weeks), it **MUST be partitioned into multiple slices/phases**:
+- **Slice 1 (MVP)**: Most critical flow providing immediate standalone value (e.g., Create + View).
+- **Slice 2**: Secondary flows (Edit + Cancel).
+- **Slice 3**: Polishing features (Notifications + Reporting).
+- **Out of Scope Rule**: Do not relegate essential functionality (such as validation and basic error handling) to "Out of Scope".
 
 ---
 
-## 🚫 Anti-Patterns yang Wajib Diberi Tanda (Flagged)
+## 🚫 Anti-Patterns to Flag
 
-| Anti-Pattern | Contoh Buruk | Contoh Perbaikan yang Baik |
+| Anti-Pattern | Bad Example | Good Corrected Example |
 |---|---|---|
-| **Bahasa Ambigu** | *"Sistem harus cepat"* | *"Waktu respons API < 200ms pada p95"* |
-| **Solusi sebagai Syarat** | *"Gunakan Redis untuk cache"* | *"Data sering diakses harus tampil < 50ms"* |
-| **Lifecycle Sepotong** | *"Hanya buat screen Add Order"* | *"Tentukan lifecycle: Add, View, Cancel, Complete"* |
-| **Abaikan Dampak Kolateral** | *"Tambah kolom diskon di order"* | *"Tambah diskon -> perbarui invoice, pajak, laporan"* |
-| **CRUD Slicing Cacat** | *"Fase 1: Create Order. Fase 2: View Order"* | *"Fase 1 harus mencakup Create dan View agar bermanfaat"* |
-| **Justifikasi Subjektif** | *"Banyak user minta fitur ini"* | *"15 customer tiket support meminta ini (total nilai kontrak €20k)"* |
+| **Ambiguous Language** | *"System must be fast"* | *"API response time < 200ms at p95"* |
+| **Solution as Requirement** | *"Use Redis for caching"* | *"Frequently accessed data must load in < 50ms"* |
+| **Partial Lifecycle** | *"Just build Add Order screen"* | *"Define full lifecycle: Add, View, Cancel, Complete"* |
+| **Ignoring Collateral Impact** | *"Add discount column to orders"* | *"Adding discount -> update invoice, tax, financial reporting"* |
+| **Flawed CRUD Slicing** | *"Phase 1: Create Order. Phase 2: View Order"* | *"Phase 1 must include Create and View to provide viable value"* |
+| **Subjective Justification** | *"Many users want this feature"* | *"15 customer support tickets requested this (total contract value €20k)"* |

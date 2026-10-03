@@ -12,127 +12,127 @@ triggers:
 
 # Universal AI Agent Audit: DDD & Hexagonal Architecture Compliance
 
-Prompt dan instruksi bagi AI Agent (Gemini, Claude, ChatGPT, Cursor, dll) untuk mengaudit kepatuhan kode terhadap aturan **Domain-Driven Design (DDD)**, **Hexagonal Architecture**, dan **CQRS**.
+Prompts and instructions for AI Agents (Gemini, Claude, ChatGPT, Cursor, etc.) to audit code compliance against **Domain-Driven Design (DDD)**, **Hexagonal Architecture**, and **CQRS** rules.
 
 ---
 
-## 🎯 Instruksi Audit untuk AI Agent
+## 🎯 Audit Instructions for AI Agents
 
-Saat diminta melakukan audit arsitektur:
-1. Scan seluruh codebase di bawah `Apps/` dan `src/`.
-2. Analisis kode terhadap 8 area kepatuhan kritis di bawah ini.
-3. Kelompokkan temuan berdasarkan tingkat keparahan: **CRITICAL**, **HIGH**, dan **MEDIUM**.
-4. Simpan laporan hasil audit ke dalam file markdown di: `docs/Reports/YYYY-MM-DD-audit-architecture.md`.
+When requested to conduct an architectural audit:
+1. Scan the entire codebase under `Apps/` and `src/`.
+2. Analyze code against the 8 critical compliance areas below.
+3. Categorize findings by severity: **CRITICAL**, **HIGH**, and **MEDIUM**.
+4. Save the audit findings report to a markdown file at: `docs/Reports/YYYY-MM-DD-audit-architecture.md`.
 
 ---
 
-## 🔍 8 Area Kepatuhan yang Wajib Diperiksa:
+## 🔍 8 Mandatory Compliance Areas to Inspect:
 
 ### 1. HTTP Layer — Actions (CRITICAL)
-Lokasi: `Apps/Api/**/*/Action.php`
-- ❌ **Pelanggaran**:
-  - Memanggil `DB::table()`, `DB::statement()`, atau Query Builder.
-  - Memanggil Eloquent Model (`Model::find()`, `Model::where()`).
-  - Terdapat perulangan (`foreach`, `array_map`) untuk logika bisnis atau transformasi data domain.
-  - Memiliki logika bisnis, kalkulasi harga/diskon, atau validasi domain.
-  - Mengembalikan `JsonResponse` langsung (seharusnya mengembalikan Custom Resource `XxxRes`).
-  - Mengembalikan DTO internal atau raw array.
-  - Panjang method > 20 baris.
-- ✅ **Standar**:
-  - Hanya melakukan: verifikasi akses (JWT), dispatch command/query, dan mengembalikan `XxxRes` via `ResService`.
+Location: `Apps/Api/**/*/Action.php`
+- ❌ **Violations**:
+  - Calling `DB::table()`, `DB::statement()`, or Query Builder.
+  - Calling Eloquent Models (`Model::find()`, `Model::where()`).
+  - Presence of loops (`foreach`, `array_map`) for business logic or domain data transformation.
+  - Containing business logic, price/discount calculations, or domain validation.
+  - Returning `JsonResponse` directly (should return Custom Resource `XxxRes`).
+  - Returning internal DTOs or raw arrays.
+  - Method length > 20 lines.
+- ✅ **Standard**:
+  - Performs solely: access verification (JWT), command/query dispatch, and returning `XxxRes` via `ResService`.
 
 ### 2. HTTP Layer — Requests (CRITICAL)
-Lokasi: `Apps/Api/**/*/Request.php`
-- ❌ **Pelanggaran**:
-  - Tidak memiliki method `getDto(): XxxDto`.
-  - Mengirimkan raw request data atau data tanpa tipe ke Action/Handler.
-- ✅ **Standar**:
-  - Boleh memiliki `rules(): array` untuk validasi format HTTP dasar.
-  - Wajib memiliki `getDto(): XxxDto` untuk memetakan input ke strongly-typed DTO.
+Location: `Apps/Api/**/*/Request.php`
+- ❌ **Violations**:
+  - Missing `getDto(): XxxDto` method.
+  - Passing raw request data or untyped data to Actions/Handlers.
+- ✅ **Standard**:
+  - May contain `rules(): array` for basic HTTP format validation.
+  - Must provide `getDto(): XxxDto` to map inputs into a strongly-typed DTO.
 
 ### 3. Application Layer — Handlers (CRITICAL)
-Lokasi: `src/**/Application/**/Handler.php`
-- ❌ **Pelanggaran**:
-  - Menggunakan `DB::` langsung dalam bentuk apa pun.
-  - Menggunakan Eloquent Model langsung.
-- ✅ **Standar**:
-  - Selalu inject `*RepositoryInterface` dari Domain.
+Location: `src/**/Application/**/Handler.php`
+- ❌ **Violations**:
+  - Using direct `DB::` calls in any form.
+  - Using Eloquent Models directly.
+- ✅ **Standard**:
+  - Always inject `*RepositoryInterface` from the Domain.
 
 ### 4. CQRS — Commands (CRITICAL)
-Lokasi: `src/**/Application/Commands/**/`
-- ❌ **Pelanggaran**:
-  - Command Handler mengembalikan nilai selain `void` (misal: `return $id;` atau return Entity).
-- ✅ **Standar**:
-  - Return type Handler adalah `void`.
-  - ID digenerate sebelum command di-dispatch dan diteruskan sebagai parameter command.
+Location: `src/**/Application/Commands/**/`
+- ❌ **Violations**:
+  - Command Handlers returning any value other than `void` (e.g., `return $id;` or returning an Entity).
+- ✅ **Standard**:
+  - Handler return type is strictly `void`.
+  - IDs are generated before dispatching the command and passed in as command parameters.
 
 ### 5. Entity Invariants & Construction Pattern (CRITICAL)
-Lokasi: `src/**/Domain/Entities/*.php`
-- ❌ **Pelanggaran**:
-  - Constructor `public` tanpa enkapsulasi invariant.
-  - Terdapat public setter (`setStatus()`, `setItems()`).
-  - Mapper menggunakan `ReflectionClass::newInstanceWithoutConstructor()`.
-- ✅ **Standar**:
-  - Constructor `private`.
-  - Terdapat static method `create(...)` untuk data baru (dengan Domain Event).
-  - Terdapat static method `reconstitute(...)` untuk hidrasi database (tanpa Domain Event).
+Location: `src/**/Domain/Entities/*.php`
+- ❌ **Violations**:
+  - `public` constructors without invariant encapsulation.
+  - Presence of public setters (`setStatus()`, `setItems()`).
+  - Mappers utilizing `ReflectionClass::newInstanceWithoutConstructor()`.
+- ✅ **Standard**:
+  - `private` constructor.
+  - Static method `create(...)` for new data (with Domain Events).
+  - Static method `reconstitute(...)` for database hydration (without Domain Events).
 
 ### 6. Database Performance — Queries in Loops (CRITICAL)
-Lokasi: Seluruh file di `src/` dan `Apps/`
-- ❌ **Pelanggaran**:
-  - Pemanggilan repository atau query database di dalam perulangan (`foreach`, `while`).
-- ✅ **Standar**:
-  - Ambil semua ID terlebih dahulu, lalu jalankan satu query dengan klausa `IN (...)`.
+Location: All files across `src/` and `Apps/`
+- ❌ **Violations**:
+  - Repository invocations or database queries executed inside loops (`foreach`, `while`).
+- ✅ **Standard**:
+  - Collect all IDs upfront, then execute a single query using an `IN (...)` clause.
 
 ### 7. Value Objects — ID Typing (HIGH)
-Lokasi: `src/**/Domain/Repositories/*Interface.php`
-- ❌ **Pelanggaran**:
-  - Parameter ID menggunakan tipe data primitif `string` atau `int`.
-- ✅ **Standar**:
-  - Parameter ID wajib menggunakan Value Object bertipe (contoh: `BookingId $id`, `ClientId $id`).
+Location: `src/**/Domain/Repositories/*Interface.php`
+- ❌ **Violations**:
+  - ID parameters typed with primitive `string` or `int`.
+- ✅ **Standard**:
+  - ID parameters must use typed Value Objects (e.g., `BookingId $id`, `ClientId $id`).
 
 ### 8. Bounded Context Boundaries (HIGH)
-Lokasi: `src/**`
-- ❌ **Pelanggaran**:
-  - Entity atau Repository digunakan langsung oleh Bounded Context lain tanpa melalui QueryBus / CommandBus.
-  - SQL JOIN langsung antar tabel milik Bounded Context yang berbeda.
+Location: `src/**`
+- ❌ **Violations**:
+  - Entities or Repositories directly accessed across Bounded Contexts without going through QueryBus / CommandBus.
+  - Direct SQL JOINs across tables belonging to different Bounded Contexts.
 
 ---
 
-## 📄 Format Laporan Audit (`docs/Reports/YYYY-MM-DD-audit-architecture.md`)
+## 📄 Audit Report Format (`docs/Reports/YYYY-MM-DD-audit-architecture.md`)
 
 ```markdown
 # DDD and Hexagonal Architecture Audit Report
 
 **Date:** YYYY-MM-DD  
-**Auditor Agent:** [Nama AI Agent]  
+**Auditor Agent:** [AI Agent Name]  
 **Status:** Completed  
 
 ## 🚨 CRITICAL VIOLATIONS
 
-### 1. [Nama File]:[Nomor Baris]
-- **Kategori**: [HTTP Action / Direct DB / Command Return]
-- **Potongan Kode Bermasalah**:
+### 1. [File Name]:[Line Number]
+- **Category**: [HTTP Action / Direct DB / Command Return]
+- **Violating Code Snippet**:
   ```php
-  // Kode pelanggaran
+  // Violating code
   ```
-- **Penjelasan Masalah**: [Mengapa melanggar aturan arsitektur]
-- **Solusi Perbaikan**:
+- **Issue Explanation**: [Why it violates architectural rules]
+- **Remediation Solution**:
   ```php
-  // Kode perbaikan yang direkomendasikan
+  // Recommended remediation code
   ```
 
 ## ⚠️ HIGH & MEDIUM VIOLATIONS
-[Daftar temuan lainnya]
+[List of other findings]
 
-## 📊 Ringkasan Statistik
-- Critical: X temuan
-- High: X temuan
-- Medium: X temuan
-- Total File Diperiksa: X file
+## 📊 Statistics Summary
+- Critical: X findings
+- High: X findings
+- Medium: X findings
+- Total Files Inspected: X files
 
-## 🎯 Prioritas Tindakan
-1. Perbaiki Action dan Handler yang menyentuh DB langsung.
-2. Perbaiki signature Command Handler agar strictly void.
-3. Refaktor hidrasi entity ke `reconstitute()`.
+## 🎯 Action Priorities
+1. Refactor Actions and Handlers touching direct DB calls.
+2. Fix Command Handler signatures to be strictly void.
+3. Refactor entity hydration to use `reconstitute()`.
 ```

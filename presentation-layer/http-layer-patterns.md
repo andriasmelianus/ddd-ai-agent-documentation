@@ -1,38 +1,38 @@
 # HTTP Layer Architecture Patterns (Action-Request-Dto-Res)
 
-Panduan standar arsitektur HTTP Layer pada **Apps/Api/**: Pola **Action**, **FormRequest**, **Input DTO**, **Custom API Resource (`XxxRes`)**, dan **Controller**.
+Architecture standards guide for the HTTP Layer under **Apps/Api/**: The **Action**, **FormRequest**, **Input DTO**, **Custom API Resource (`XxxRes`)**, and **Controller** pattern.
 
 ---
 
-## 📋 Alur Eksekusi Permintaan HTTP
+## 📋 HTTP Request Execution Flow
 
 ```
                     HTTP Client Request (POST/GET)
                                   │
                                   ▼
       ┌────────────────────────────────────────────────────────┐
-      │          1. FormRequest (Validasi Sintaks & Tipe)      │
-      │  - rules(): array -> Validasi input & batasan HTTP     │
-      │  - getDto(): XxxDto -> Mapping data ke Typed DTO       │
+      │       1. FormRequest (Syntax & Type Validation)        │
+      │  - rules(): array -> Validates input & HTTP constraints│
+      │  - getDto(): XxxDto -> Maps data to Typed DTO          │
       └───────────────────────────┬────────────────────────────┘
-                                  │ mengirim DTO
+                                  │ sends DTO
                                   ▼
       ┌────────────────────────────────────────────────────────┐
-      │          2. Controller (Orkestrator HTTP)              │
-      │  - Menerima FormRequest & Action                       │
-      │  - Memanggil $action($request->getDto())               │
-      │  - Menerima Resource (XxxRes)                          │
-      │  - Mengembalikan response()->json($resource, status)   │
+      │          2. Controller (HTTP Orchestrator)             │
+      │  - Receives FormRequest & Action                       │
+      │  - Calls $action($request->getDto())                   │
+      │  - Receives Resource (XxxRes)                          │
+      │  - Returns response()->json($resource, status)         │
       └───────────────────────────┬────────────────────────────┘
-                                  │ mengeksekusi
+                                  │ executes
                                   ▼
       ┌────────────────────────────────────────────────────────┐
-      │          3. Action (Thin Application Dispatcher)       │
-      │  - Maksimal 20 baris kode                              │
-      │  - 1. Verifikasi hak akses/keamanan (JWT)              │
-      │  - 2. Dispatch Command / Query                         │
-      │  - 3. Ambil dan kembalikan Resource via ResService     │
-      │  - ❌ DILARANG return JsonResponse atau DTO internal    │
+      │       3. Action (Thin Application Dispatcher)          │
+      │  - Maximum 20 lines of code                            │
+      │  - 1. Verifies access control / security (JWT)         │
+      │  - 2. Dispatches Command / Query                       │
+      │  - 3. Fetches and returns Resource via ResService      │
+      │  - ❌ FORBIDDEN to return JsonResponse or internal DTO  │
       └───────────────────────────┬────────────────────────────┘
                                   │
                   ┌───────────────┴───────────────┐
@@ -45,52 +45,52 @@ Panduan standar arsitektur HTTP Layer pada **Apps/Api/**: Pola **Action**, **For
                                                   ▼
       ┌───────────────────────────────────────────────────────┐
       │         4. ResService & Custom Resource (XxxRes)      │
-      │  - ResService: Mengubah Domain DTO -> XxxRes          │
+      │  - ResService: Converts Domain DTO -> XxxRes          │
       │  - XxxRes: Implements JsonSerializable                │
       └───────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🗂️ Struktur Direktori `Apps/Api/`
+## 🗂️ Directory Structure: `Apps/Api/`
 
-Setiap modul di HTTP Layer diorganisasikan per *use case / action*:
+Each module in the HTTP Layer is organized by *use case / action*:
 
 ```
 Apps/Api/
-├── Booking/                           # Bounded context / Modul
+├── Booking/                           # Bounded context / Module
 │   ├── Create/                        # Use case: Create Booking
 │   │   ├── CreateBookingAction.php    # Thin action orchestrator
 │   │   ├── CreateBookingRequest.php   # FormRequest (rules + getDto)
 │   │   ├── CreateBookingDto.php       # Strongly-typed input DTO
-│   │   └── ProductInputDto.php        # Nested input DTO (jika ada)
+│   │   └── ProductInputDto.php        # Nested input DTO (if applicable)
 │   ├── Show/                          # Use case: Show Booking
 │   │   ├── ShowBookingAction.php
 │   │   └── ShowBookingRequest.php
 │   ├── Index/                         # Use case: Index Bookings
 │   │   ├── IndexBookingsAction.php
 │   │   └── IndexBookingsRequest.php
-│   ├── Shared/                        # Shared resources untuk modul Booking
+│   ├── Shared/                        # Shared resources for Booking module
 │   │   ├── BookingRes.php             # Custom Resource (JsonSerializable)
-│   │   ├── BookingCreatedRes.php      # Resource respons create
-│   │   ├── BookingListItemRes.php     # Resource untuk list
+│   │   ├── BookingCreatedRes.php      # Creation response Resource
+│   │   ├── BookingListItemRes.php     # Listing Resource
 │   │   └── Services/
-│   │       └── BookingResService.php  # Konversi DTO -> Res
-│   └── BookingController.php          # Controller delegator
-└── Shared/                            # Shared lintas modul Apps
+│   │       └── BookingResService.php  # DTO -> Res conversion
+│   └── BookingController.php          # Delegating Controller
+└── Shared/                            # Cross-module shared HTTP components
     └── Http/
-        ├── AbstractFormRequest.php    # Base FormRequest dengan FormRequestHelper
-        ├── FormRequestHelper.php      # Helper parsing data bertipe
-        └── BaseRes.php                # Base class API Resource
+        ├── AbstractFormRequest.php    # Base FormRequest with FormRequestHelper
+        ├── FormRequestHelper.php      # Helper for typed data extraction
+        └── BaseRes.php                # Base class for API Resources
 ```
 
 ---
 
 ## 1. Request (`rules()` + `getDto()`)
 
-Untuk menjaga kepraktisan ekosistem Laravel sekaligus menegakkan type-safety DDD:
-1. **`rules(): array`**: Digunakan untuk validasi sintaks HTTP dasar (required, min, max, format string/email).
-2. **`getDto(): XxxDto`**: Memetakan input yang sudah lolos validasi ke strongly-typed DTO.
+To balance the practicality of the Laravel ecosystem while enforcing DDD type-safety:
+1. **`rules(): array`**: Used for basic HTTP syntax validation (required, min, max, string/email format).
+2. **`getDto(): XxxDto`**: Maps validated inputs into a strongly-typed DTO.
 
 ```php
 namespace Apps\Api\Booking\Create;
@@ -103,7 +103,7 @@ use Src\Reservation\Domain\ValueObjects\RestaurantId;
 final class CreateBookingRequest extends AbstractFormRequest
 {
     /**
-     * 1. Validasi Sintaks HTTP (Format, Batasan Panjang, dsb)
+     * 1. HTTP Syntax Validation (Format, Length Constraints, etc.)
      */
     public function rules(): array
     {
@@ -120,7 +120,7 @@ final class CreateBookingRequest extends AbstractFormRequest
     }
 
     /**
-     * 2. Pemetaan ke Strongly-Typed Input DTO
+     * 2. Mapping to Strongly-Typed Input DTO
      */
     public function getDto(): CreateBookingDto
     {
@@ -135,7 +135,7 @@ final class CreateBookingRequest extends AbstractFormRequest
         );
 
         return new CreateBookingDto(
-            id: BookingId::random(), // Generate ID langsung di lapisan HTTP
+            id: BookingId::random(), // Generate ID directly in the HTTP layer
             clientId: ClientId::fromString($helper->getString('client_id')),
             restaurantId: RestaurantId::fromString($helper->getString('restaurant_id')),
             timeSlot: new \DateTimeImmutable($helper->getString('time_slot')),
@@ -178,20 +178,20 @@ final readonly class CreateBookingDto
 
 ---
 
-## 3. Thin Action (Maksimal 20 Baris)
+## 3. Thin Action (Maximum 20 Lines)
 
-Action adalah orchestrator pemanggilan Application Layer. Action **HANYA** memiliki 3 tanggung jawab:
-1. Verifikasi hak akses (Security/JWT)
-2. Dispatch Command atau Query
-3. Mengembalikan Custom Resource (`XxxRes`)
+The Action orchestrates calls to the Application Layer. An Action **ONLY** has 3 responsibilities:
+1. Verify access permissions (Security/JWT)
+2. Dispatch a Command or Query
+3. Return a Custom Resource (`XxxRes`)
 
-### ❌ Larangan Kritis di Action:
-- ❌ **Dilarang return `JsonResponse`** (Tugas Controller).
-- ❌ **Dilarang return DTO internal atau raw array**.
-- ❌ **Dilarang `DB::` atau akses Model**.
-- ❌ **Dilarang ada loop (`foreach`, `array_map`) atau validasi bisnis**.
+### ❌ Critical Prohibitions in Actions:
+- ❌ **Forbidden to return `JsonResponse`** (Responsibility of the Controller).
+- ❌ **Forbidden to return internal DTOs or raw arrays**.
+- ❌ **Forbidden to use `DB::` or access Models**.
+- ❌ **Forbidden to run loops (`foreach`, `array_map`) or perform business validation**.
 
-### ✅ Contoh Action yang Benar:
+### ✅ Example of a Proper Action:
 
 ```php
 namespace Apps\Api\Booking\Create;
@@ -208,7 +208,7 @@ final readonly class CreateBookingAction
 
     public function __invoke(CreateBookingDto $dto): BookingCreatedRes
     {
-        // 1. Dispatch command (Semua business logic ada di Handler)
+        // 1. Dispatch command (All business logic resides in Handler)
         $this->commandBus->dispatch(new CreateBookingCommand(
             id: $dto->id,
             clientId: $dto->clientId,
@@ -225,7 +225,7 @@ final readonly class CreateBookingAction
             ),
         ));
 
-        // 2. Return Custom Resource (Bukan JsonResponse!)
+        // 2. Return Custom Resource (Not a JsonResponse!)
         return new BookingCreatedRes(
             id: $dto->id->value(),
             message: 'Booking created successfully'
@@ -238,7 +238,7 @@ final readonly class CreateBookingAction
 
 ## 4. Custom API Resource (`XxxRes`)
 
-Sistem menggunakan class Resource murni yang mengimplementasikan `\JsonSerializable` (atau meng-extend `BaseRes`), **bukan** `Illuminate\Http\Resources\Json\JsonResource`.
+The system utilizes pure Resource classes that implement `\JsonSerializable` (or extend `BaseRes`), **not** `Illuminate\Http\Resources\Json\JsonResource`.
 
 ```php
 namespace Apps\Api\Booking\Shared;
@@ -276,9 +276,9 @@ final readonly class BookingRes extends BaseRes implements \JsonSerializable
 
 ---
 
-## 5. ResService (Konversi DTO -> Res)
+## 5. ResService (DTO -> Res Conversion)
 
-`ResService` bertugas menjembatani domain DTO yang dikembalikan oleh QueryBus menjadi Resource HTTP:
+`ResService` bridges domain DTOs returned by the QueryBus into HTTP Resources:
 
 ```php
 namespace Apps\Api\Booking\Shared\Services;
@@ -320,9 +320,9 @@ final readonly class BookingResService
 
 ---
 
-## 6. Controller (Orkestrator HTTP)
+## 6. Controller (HTTP Orchestrator)
 
-Controller menghubungkan Request, Action, dan konversi ke `JsonResponse`:
+Controllers connect Requests, Actions, and handle conversion to `JsonResponse`:
 
 ```php
 namespace Apps\Api\Booking;
@@ -341,7 +341,7 @@ final class BookingController
     ): JsonResponse {
         $resource = $action($request->getDto());
 
-        // Controller mengubah Resource menjadi JsonResponse dengan HTTP Status 201
+        // Controller converts Resource into JsonResponse with HTTP Status 201
         return response()->json($resource, 201);
     }
 
@@ -358,14 +358,14 @@ final class BookingController
 
 ---
 
-## 📋 Checklist Validasi HTTP Layer
+## 📋 HTTP Layer Validation Checklist
 
-- [ ] Request class memiliki `rules(): array` untuk validasi format.
-- [ ] Request class memiliki method `getDto(): XxxDto`.
-- [ ] Input DTO bersifat `final readonly` dengan properti bertipe jelas.
-- [ ] Action memiliki panjang **≤ 20 baris**.
-- [ ] Action **TIDAK** memanggil `DB::` atau `Model::`.
-- [ ] Action **TIDAK** memiliki perulangan (`foreach`, `array_map`) untuk logika bisnis.
-- [ ] Action **TIDAK** mengembalikan `JsonResponse`, raw array, atau DTO.
-- [ ] Action **MENGEMBALIKAN** Custom Resource (`XxxRes`).
-- [ ] Controller bertugas memanggil `response()->json($resource, $status)`.
+- [ ] Request class contains `rules(): array` for format validation.
+- [ ] Request class contains a `getDto(): XxxDto` method.
+- [ ] Input DTO is `final readonly` with explicit property types.
+- [ ] Action length is **≤ 20 lines**.
+- [ ] Action does **NOT** call `DB::` or `Model::`.
+- [ ] Action does **NOT** contain loops (`foreach`, `array_map`) for business logic.
+- [ ] Action does **NOT** return `JsonResponse`, raw arrays, or DTOs.
+- [ ] Action **RETURNS** a Custom Resource (`XxxRes`).
+- [ ] Controller handles invoking `response()->json($resource, $status)`.

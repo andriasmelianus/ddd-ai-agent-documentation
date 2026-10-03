@@ -1,20 +1,20 @@
 # Multi-AI Agent Compatibility Guide
 
-Dokumentasi ini dirancang agar **100% kompatibel dan agnostik** terhadap AI Agent mana pun yang Anda gunakan: **Gemini (Antigravity), Claude (Claude Code / Anthropic), OpenAI ChatGPT, Cursor, Windsurf, GitHub Copilot**, dan lainnya.
+This documentation is designed to be **100% compatible and agnostic** across any AI Agent you use: **Gemini (Antigravity), Claude (Claude Code / Anthropic), OpenAI ChatGPT, Cursor, Windsurf, GitHub Copilot**, and others.
 
-Berikut adalah panduan cara mengonfigurasi dan memanfaatkan paket dokumentasi ini pada berbagai AI agent:
+Below is the guide on how to configure and utilize this documentation package across various AI agents:
 
 ---
 
 ## 🤖 1. Gemini / Google Antigravity
 
-- **Di mana meletakkannya**: Anda dapat meletakkan folder dokumentasi ini di direktori project (misal: `docs/ai_docs/` atau `.gemini/rules/`) atau menyimpannya di lokasi terpusat seperti `/home/andrias/projects/shared/ddd-ai-agent-documentation/`.
+- **Where to place it**: You can place this documentation folder in your project directory (e.g., `docs/ai_docs/` or `.gemini/rules/`) or keep it in a centralized shared location such as `/home/borwita/projects/shared/ddd-ai-agent-documentation/`.
 - **System Prompt / Workspace Instruction**:
-  Tambahkan instruksi berikut pada instruksi awal atau konfigurasi workspace:
+  Add the following instructions to your initial instructions or workspace configuration:
   ```markdown
-  Selalu patuhi aturan Domain-Driven Design (DDD), Hexagonal Architecture, dan CQRS yang tertera di:
-  [ddd-ai-agent-documentation](file:///home/andrias/projects/shared/ddd-ai-agent-documentation/README.md)
-  Sebelum memulai pengerjaan kode, baca `core-architecture/02-critical-rules.md` dan `PROJECT_CONTEXT.md`.
+  Always adhere to the Domain-Driven Design (DDD), Hexagonal Architecture, and CQRS rules documented in:
+  [ddd-ai-agent-documentation](file:///home/borwita/projects/shared/ddd-ai-agent-documentation/README.md)
+  Before starting any code implementation, read `core-architecture/02-critical-rules.md` and `PROJECT_CONTEXT.md`.
   ```
 
 ---
@@ -22,33 +22,33 @@ Berikut adalah panduan cara mengonfigurasi dan memanfaatkan paket dokumentasi in
 ## 🧠 2. Claude (Claude Code / Anthropic)
 
 - **Root Guide (`CLAUDE.md`)**:
-  Buat file `CLAUDE.md` di root project Anda dengan isi sederhana yang merujuk ke dokumentasi bersama ini:
+  Create a `CLAUDE.md` file in your project root with a straightforward reference to this shared documentation:
   ```markdown
   # Project Guidelines for Claude Code
 
   This project strictly follows Domain-Driven Design, Hexagonal Architecture, and CQRS.
   All architectural rules and standards are documented in:
-  `/home/andrias/projects/shared/ddd-ai-agent-documentation/`
+  `/home/borwita/projects/shared/ddd-ai-agent-documentation/`
 
   Read `core-architecture/02-critical-rules.md` before generating or modifying any code.
   Follow the 3-Phase workflow in `development-lifecycle/01-development-workflow.md`.
   ```
 - **Custom Slash Commands (`.claude/commands/`)**:
-  Salin prompt dari direktori `agent-commands-and-audits/` ke dalam folder `.claude/commands/` di project Anda:
+  Copy prompts from the `agent-commands-and-audits/` directory into your project's `.claude/commands/` folder:
   - `agent-commands-and-audits/audit-architecture.md` → `.claude/commands/audit-architecture.md`
   - `agent-commands-and-audits/validate-http-layer.md` → `.claude/commands/validate-http-layer.md`
   - `agent-commands-and-audits/analyze-performance.md` → `.claude/commands/analyze-performance.md`
 
 ---
 
-## ⚡ 3. Cursor IDE (`.cursorrules` atau `.cursor/rules/`)
+## ⚡ 3. Cursor IDE (`.cursorrules` or `.cursor/rules/`)
 
-- Buat file `.cursorrules` di root project, atau buat rules di folder `.cursor/rules/`:
+- Create a `.cursorrules` file in your project root, or create rules under `.cursor/rules/`:
   ```markdown
   You are an expert software engineer working on a Domain-Driven Design (DDD), Hexagonal Architecture, and CQRS project in PHP/Laravel.
 
   Always follow the architecture documentation located at:
-  /home/andrias/projects/shared/ddd-ai-agent-documentation/
+  /home/borwita/projects/shared/ddd-ai-agent-documentation/
 
   Key Rules:
   1. Requests can have rules() for HTTP syntax validation AND getDto() for DTO mapping.
@@ -63,10 +63,10 @@ Berikut adalah panduan cara mengonfigurasi dan memanfaatkan paket dokumentasi in
 
 ## 🌊 4. Windsurf (`.windsurfrules`)
 
-- Buat file `.windsurfrules` di root project dengan referensi ke path dokumentasi yang sama:
+- Create a `.windsurfrules` file in your project root referencing the same documentation path:
   ```markdown
   Architectural Framework:
-  Refer to `/home/andrias/projects/shared/ddd-ai-agent-documentation/` for DDD, Hexagonal Architecture, CQRS, and HTTP Layer patterns.
+  Refer to `/home/borwita/projects/shared/ddd-ai-agent-documentation/` for DDD, Hexagonal Architecture, CQRS, and HTTP Layer patterns.
   Never violate `core-architecture/02-critical-rules.md`.
   ```
 
@@ -74,25 +74,25 @@ Berikut adalah panduan cara mengonfigurasi dan memanfaatkan paket dokumentasi in
 
 ## 💬 5. OpenAI ChatGPT / Custom GPT / Copilot Chat
 
-- **Untuk Custom GPT / System Instructions**:
-  Unggah dokumen di direktori `core-architecture/`, `presentation-layer/`, dan `development-lifecycle/` sebagai Knowledge Base, atau salin ringkasan dari `README.md` dan `02-critical-rules.md` ke dalam field Instructions.
-- **Untuk Chat Prompting**:
-  Ketika meminta ChatGPT atau Copilot membuat fitur baru:
+- **For Custom GPT / System Instructions**:
+  Upload documents from `core-architecture/`, `presentation-layer/`, and `development-lifecycle/` directories as Knowledge Base files, or copy the summary from `README.md` and `02-critical-rules.md` into the Instructions field.
+- **For Chat Prompting**:
+  When asking ChatGPT or Copilot to create a new feature:
   ```
-  Saya mengerjakan project Laravel dengan standar DDD, Hexagonal Architecture, dan CQRS.
-  Patuhi aturan berikut:
-  1. Request memiliki rules() untuk validasi format input dan getDto() untuk membuat Strongly-Typed DTO.
-  2. Action tipis (maksimal 20 baris), hanya verifikasi akses, dispatch command/query, dan mengembalikan custom Resource (XxxRes).
-  3. Controller mengubah XxxRes menjadi JsonResponse via response()->json($res).
-  4. Command Handler wajib return void (ID di-generate sebelum dispatch).
-  5. Entity menggunakan private constructor dengan static create() dan static reconstitute().
+  I am working on a Laravel project following DDD, Hexagonal Architecture, and CQRS standards.
+  Adhere to the following rules:
+  1. Requests have rules() for input format validation and getDto() to create Strongly-Typed DTOs.
+  2. Actions are thin (maximum 20 lines), handling only access verification, command/query dispatch, and returning a custom Resource (XxxRes).
+  3. Controllers convert XxxRes into JsonResponse via response()->json($res).
+  4. Command Handlers must return void (IDs are generated before dispatch).
+  5. Entities use private constructors with static create() and static reconstitute().
   ```
 
 ---
 
-## 🎯 Ringkasan Kompatibilitas Agent
+## 🎯 Summary of Agent Compatibility
 
-Semua dokumen di dalam repositori ini:
-- Menggunakan format standar Markdown (`.md`) murni.
-- Menghindari vendor-lock in atau sintaks tertutup.
-- Memisahkan **definisi arsitektur** dari **prompt eksekusi audit**, sehingga prompt audit dapat dijalankan oleh agent mana pun baik melalui slash command maupun copy-paste instruksi.
+All documents in this repository:
+- Use pure standard Markdown (`.md`) format.
+- Avoid vendor lock-in or proprietary syntax.
+- Separate **architectural definitions** from **audit execution prompts**, enabling audit prompts to be executed by any agent via slash commands or copied instructions.

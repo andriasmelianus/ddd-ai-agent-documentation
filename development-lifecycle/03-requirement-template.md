@@ -1,63 +1,63 @@
 # 03 - Requirement Document Templates
 
-Template standar untuk dokumen kebutuhan di dalam `docs/working_docs/`: **Epic**, **Feature**, **Hotfix**, dan **Case (Investigation)**.
+Standard templates for requirements documents within `docs/working_docs/`: **Epic**, **Feature**, **Hotfix**, and **Case (Investigation)**.
 
 ---
 
 ## 🏛️ Template 1: EPIC (`docs/working_docs/epics/{epic-name}/{epic-name}_requirements.md`)
 
 ```markdown
-# Epic: [Nama Inisiatif Bisnis]
+# Epic: [Business Initiative Name]
 
 **Epic ID:** EPIC-001  
-**Owner / Domain Expert:** [Nama Person]  
+**Owner / Domain Expert:** [Person's Name]  
 **Status:** Draft / Validated / In Progress / Completed  
-**Target Deadline:** YYYY-MM-DD (jika ada)  
+**Target Deadline:** YYYY-MM-DD (if applicable)  
 
-## 1. Business Alignment & Justifikasi
-- **Tujuan Utama Perusahaan**: [Tumbuhkan Revenue / Turunkan Churn / Efisiensi Operasional]
-- **Target KPI**:
-  - Baseline: [Kondisi saat ini, misal: Occupancy rate 60%]
-  - Target: [Target setelah rilis, misal: Occupancy rate 80%]
-- **Bukti / Data Pendukung**: [Tiket komplain, permintaan kontrak klien, data analitik]
+## 1. Business Alignment & Justification
+- **Primary Business Goal**: [Grow Revenue / Reduce Churn / Operational Efficiency]
+- **Target KPIs**:
+  - Baseline: [Current state, e.g., Occupancy rate 60%]
+  - Target: [Post-release target, e.g., Occupancy rate 80%]
+- **Supporting Evidence / Data**: [Support tickets, client contract requests, analytics data]
 
-## 2. Deskripsi Masalah & Ruang Lingkup
-- **Masalah Saat Ini**: [Penjelasan masalah pengguna]
-- **Solusi yang Diharapkan**: [Ringkasan kapabilitas baru]
-- **Entitas Utama**: [Daftar entitas domain yang terlibat]
+## 2. Problem Statement & Scope
+- **Current Problem**: [Explanation of user pain points]
+- **Expected Solution**: [Summary of new capability]
+- **Core Entities**: [List of domain entities involved]
 
-## 3. Analisis State & Lifecycle Entitas
-- **Initial Status**: [misal: DRAFT / PENDING]
-- **Status Valid**: [DRAFT, ACTIVE, PAUSED, CANCELLED]
-- **Matriks Transisi**:
-  - DRAFT -> ACTIVE (Trigger: Klik Terbitkan, Kondisi: Konten valid)
-  - ACTIVE -> CANCELLED (Trigger: Klik Batalkan)
+## 3. State & Entity Lifecycle Analysis
+- **Initial Status**: [e.g., DRAFT / PENDING]
+- **Valid States**: [DRAFT, ACTIVE, PAUSED, CANCELLED]
+- **Transition Matrix**:
+  - DRAFT -> ACTIVE (Trigger: Click Publish, Condition: Content is valid)
+  - ACTIVE -> CANCELLED (Trigger: Click Cancel)
 
 ## 4. Use Cases & Acceptance Criteria
-### Use Case 1: [Nama Use Case]
-- **Aktor**: [User / Admin / System]
-- **Preconditions**: [Kondisi awal]
-- **Alur Utama**:
-  1. Pengguna memilih...
-  2. Sistem memvalidasi...
-- **Kriteria Penerimaan (Acceptance Criteria)**:
+### Use Case 1: [Use Case Name]
+- **Actor**: [User / Admin / System]
+- **Preconditions**: [Initial conditions]
+- **Main Flow**:
+  1. User selects...
+  2. System validates...
+- **Acceptance Criteria**:
   - [ ] Given X, When Y, Then Z
 
-## 5. Rencana Slicing (Tahapan Rilis)
-- **Slice 1 (MVP)**: [Fitur pokok yang bisa langsung dites]
-- **Slice 2**: [Fitur pendukung / manajemen lanjutan]
-- **Out of Scope (Fase Ini)**: [Apa yang sengaja ditunda]
+## 5. Slicing Plan (Release Phases)
+- **Slice 1 (MVP)**: [Core features ready for immediate testing]
+- **Slice 2**: [Supporting features / advanced management]
+- **Out of Scope (This Phase)**: [Intentionally deferred items]
 
-## 6. Analisis Dampak Kolateral
-- **Komponen Terdampak**: [Modul/Tabel lain yang terpengaruh]
-- **Kebutuhan Migrasi Data**: [Ada/Tidak, jika ada sebutkan skenarionya]
-- **Risiko & Mitigasi**: [Risiko teknis / bisnis dan cara pencegahannya]
+## 6. Collateral Impact Analysis
+- **Affected Components**: [Other modules/tables impacted]
+- **Data Migration Needs**: [Yes/No, specify scenario if applicable]
+- **Risks & Mitigations**: [Technical / business risks and preventative steps]
 
 ## 7. Definition of Done (DoD)
-- [ ] Kode mematuhi aturan DDD & CQRS
-- [ ] Unit test domain lulus 100%
-- [ ] PHPStan 0 error
-- [ ] UAT diterima oleh Product Owner
+- [ ] Code strictly follows DDD & CQRS rules
+- [ ] Domain unit tests pass 100%
+- [ ] PHPStan 0 errors
+- [ ] UAT accepted by Product Owner
 ```
 
 ---
@@ -65,29 +65,29 @@ Template standar untuk dokumen kebutuhan di dalam `docs/working_docs/`: **Epic**
 ## 🧩 Template 2: FEATURE (`docs/working_docs/features/{feature-name}/{feature-name}_requirements.md`)
 
 ```markdown
-# Feature: [Nama Fitur]
+# Feature: [Feature Name]
 
-**Parent Epic:** [Tautan ke Dokumen Parent Epic](../../epics/{epic-name}/{epic-name}_requirements.md)  
-**Feature Scope:** [Bagian slice dari Epic mana yang dikerjakan]  
+**Parent Epic:** [Link to Parent Epic Document](../../epics/{epic-name}/{epic-name}_requirements.md)  
+**Feature Scope:** [Which slice of the parent Epic is addressed]  
 **Status:** Draft / In Development / Done  
 
-## 1. Konteks Singkat
-Menginduk ke parent epic. Fitur ini secara khusus menyelesaikan [tujuan spesifik fitur].
+## 1. Brief Context
+Subordinate to the parent epic. This feature specifically accomplishes [specific feature goal].
 
-## 2. Spesifikasi Fungsional & Kriteria Penerimaan
-### Skenario 1: [Nama Skenario]
-- **Given**: [Kondisi prasyarat]
-- **When**: [Tindakan user/sistem]
-- **Then**: [Hasil yang diharapkan]
+## 2. Functional Specifications & Acceptance Criteria
+### Scenario 1: [Scenario Name]
+- **Given**: [Prerequisite conditions]
+- **When**: [User/system action]
+- **Then**: [Expected outcome]
 
 ## 3. Input & Output Data
-- **Payload Request**: [Field, tipe data, validasi yang dibutuhkan]
-- **Format Response**: [Struktur Resource response]
+- **Request Payload**: [Fields, data types, required validations]
+- **Response Format**: [Resource response structure]
 
 ## 4. Testing & Definition of Done
-- [ ] Unit test Handler & Entity
-- [ ] Integration test HTTP Endpoint
-- [ ] Review kepatuhan arsitektur
+- [ ] Handler & Entity unit tests
+- [ ] HTTP Endpoint integration tests
+- [ ] Architecture compliance review
 ```
 
 ---
@@ -95,66 +95,66 @@ Menginduk ke parent epic. Fitur ini secara khusus menyelesaikan [tujuan spesifik
 ## 🚨 Template 3: HOTFIX (`docs/working_docs/hotfixes/HF-YYYY-XXX-{slug}/hotfix_requirements.md`)
 
 ```markdown
-# Hotfix: [Deskripsi Masalah Mendesak]
+# Hotfix: [Urgent Problem Description]
 
 **Hotfix ID:** HF-2026-001  
-**Tingkat Keparahan:** Critical / High  
-**Tanggal Dilaporkan:** YYYY-MM-DD  
-**Pengguna/Layanan Terdampak:** [Siapa saja yang terkena dampak error]  
+**Severity:** Critical / High  
+**Reported Date:** YYYY-MM-DD  
+**Affected Users / Services:** [Who is affected by the error]  
 
-## 1. Deskripsi Masalah
-[Gejala yang timbul di produksi, HTTP status error, atau stack trace]
+## 1. Problem Description
+[Symptoms occurring in production, error HTTP status, or stack traces]
 
-## 2. Dampak Bisnis & Operasional
-- Estimasi transaksi gagal: [Jumlah]
-- Dampak langsung: [Kehilangan data / komplain user]
+## 2. Business & Operational Impact
+- Estimated failed transactions: [Quantity]
+- Direct impact: [Data loss / customer complaints]
 
-## 3. Akar Masalah (Root Cause)
-[Penyebab teknis ditemukannya bug, file dan baris yang bermasalah]
+## 3. Root Cause
+[Technical cause of the bug, problematic file and line numbers]
 
-## 4. Solusi Teknis yang Diajukan
-[Rencana perbaikan kode]
+## 4. Proposed Technical Solution
+[Code repair plan]
 
-## 5. Verifikasi & Pengujian
-- [ ] Langkah reproduksi bug di lokal
-- [ ] Verifikasi perbaikan
-- [ ] Uji regresi komponen terkait
+## 5. Verification & Testing
+- [ ] Local bug reproduction steps
+- [ ] Fix verification
+- [ ] Regression testing of related components
 
-## 6. Rencana Rollback (Rollback Plan)
-[Langkah cepat mengembalikan kode/migrasi jika hotfix menimbulkan efek samping baru]
+## 6. Rollback Plan
+[Rapid steps to revert code/migrations if the hotfix triggers new side effects]
 ```
 
 ---
 
 ## 🔬 Template 4: CASE (Investigation Only) (`docs/working_docs/cases/CASE-YYYY-XXX-{slug}/case_report.md`)
 
-> ⚠️ **CATATAN**: Dokumen ini **HANYA UNTUK INVESTIGASI DAN ANALISIS INSIDEN**. Dokumen ini **TIDAK BERISI IMPLEMENTASI KODE LANGSUNG**. Jika hasil investigasi memerlukan perbaikan teknis, buat dokumen Hotfix atau Feature terpisah.
+> ⚠️ **NOTE**: This document is **STRICTLY FOR INCIDENT INVESTIGATION AND ANALYSIS**. This document **CONTAINS NO DIRECT CODE IMPLEMENTATION**. If investigation outcomes require technical remediation, create a separate Hotfix or Feature document.
 
 ```markdown
-# Case: [Investigasi Insiden / Analisis Permasalahan]
+# Case: [Incident Investigation / Issue Analysis]
 
 **Case ID:** CASE-2026-001  
-**Tanggal Kejadian:** YYYY-MM-DD  
-**Status Investigasi:** Open / In Progress / Closed  
-**Investigator:** [Nama Engineer / AI Agent]  
+**Incident Date:** YYYY-MM-DD  
+**Investigation Status:** Open / In Progress / Closed  
+**Investigator:** [Engineer / AI Agent Name]  
 
-## 1. Deskripsi Insiden
-[Penjelasan apa yang terjadi dan bagaimana insiden pertama kali terdeteksi]
+## 1. Incident Description
+[Explanation of what happened and how the incident was initially detected]
 
-## 2. Kronologi Waktu (Timeline of Events)
-- **10:00 UTC**: Insiden mulai terdeteksi di monitoring.
-- **10:15 UTC**: Notifikasi alert dikirimkan ke tim.
-- **10:45 UTC**: Investigasi log dan database dimulai.
+## 2. Timeline of Events
+- **10:00 UTC**: Incident initially detected in monitoring.
+- **10:15 UTC**: Alert notification dispatched to the team.
+- **10:45 UTC**: Log and database investigation initiated.
 
-## 3. Temuan Investigasi (Findings)
-1. [Temuan 1: log error, anomali data]
-2. [Temuan 2: query yang lambat atau memory leak]
+## 3. Investigation Findings
+1. [Finding 1: error logs, data anomalies]
+2. [Finding 2: slow queries or memory leaks]
 
-## 4. Analisis Akar Masalah (Root Cause Analysis - 5 Whys)
-[Penjelasan mendalam mengapa insiden bisa terjadi]
+## 4. Root Cause Analysis (5 Whys)
+[Deep explanation of why the incident occurred]
 
-## 5. Rekomendasi Tindak Lanjut
-1. **Perbaikan Segera (Immediate Action)**: [Rekomendasi pembuatan Hotfix HF-XXX]
-2. **Pencegahan Jangka Panjang**: [Rekomendasi pembuatan Epic/Feature atau penambahan index/monitoring]
-3. **Penyempurnaan Proses**: [Update SOP deployment / checklist migrasi]
+## 5. Actionable Recommendations
+1. **Immediate Action**: [Recommendation to create Hotfix HF-XXX]
+2. **Long-Term Prevention**: [Recommendation to create Epic/Feature or add indexes/monitoring]
+3. **Process Improvements**: [Update deployment SOP / migration checklist]
 ```

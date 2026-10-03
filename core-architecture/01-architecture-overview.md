@@ -1,87 +1,87 @@
 # 01 - Architecture Overview
 
-Panduan komprehensif mengenai penerapan **Domain-Driven Design (DDD)**, **Hexagonal Architecture (Ports and Adapters)**, dan batasan lapisan (Layer Boundaries).
+Comprehensive guide to applying **Domain-Driven Design (DDD)**, **Hexagonal Architecture (Ports and Adapters)**, and Layer Boundaries.
 
 ---
 
-## 🏛️ Prinsip Dasar Arsitektur
+## 🏛️ Foundational Architectural Principles
 
-Arsitektur sistem ini dibangun di atas 4 pilar utama:
+This system's architecture is built on 4 main pillars:
 
-1. **Domain-Centric (Framework-Agnostic)**: Inti logika bisnis (Domain) ditempatkan di dalam direktori `src/`, murni bebas dari ketergantungan framework Laravel, database, atau protokol HTTP.
-2. **Hexagonal Architecture**: Pemisahan tegas antara logika bisnis dengan dunia luar menggunakan Ports (Interfaces) di domain dan Adapters (Implementations) di infrastruktur/apps.
-3. **CQRS (Command Query Responsibility Segregation)**: Pemisahan total antara operasi tulis (Command -> void) dan operasi baca (Query -> DTO/ReadModel).
-4. **Thin Presentation Layer**: Lapisan HTTP (`Apps/Api/`) hanya berfungsi sebagai orkestrator tipis yang memvalidasi sintaks, memetakan ke DTO, mendelegasikan ke Bus, dan memformat output.
+1. **Domain-Centric (Framework-Agnostic)**: Core business logic (Domain) is placed inside the `src/` directory, entirely free of dependencies on the Laravel framework, databases, or HTTP protocols.
+2. **Hexagonal Architecture**: Strict separation between business logic and the external world using Ports (Interfaces) in the domain and Adapters (Implementations) in infrastructure/apps.
+3. **CQRS (Command Query Responsibility Segregation)**: Total separation between write operations (Command -> void) and read operations (Query -> DTO/ReadModel).
+4. **Thin Presentation Layer**: The HTTP layer (`Apps/Api/`) functions solely as a thin orchestrator that validates syntax, maps to DTOs, delegates to the Bus, and formats output.
 
 ---
 
-## 📐 Aliran Ketergantungan Lapisan (Layer Boundaries)
+## 📐 Layer Dependency Flow (Layer Boundaries)
 
-Ketergantungan selalu mengarah ke dalam (menuju Domain Layer). Domain tidak pernah bergantung pada lapisan lain.
+Dependencies always point inwards (towards the Domain Layer). The Domain never depends on any other layer.
 
 ```
        ┌────────────────────────────────────────────────────────┐
        │               HTTP / Apps Layer (Apps/)                │
        │  (Controllers, FormRequests, Actions, API Resources)   │
        └───────────────────────────┬────────────────────────────┘
-                                   │ memanggil (dispatches)
+                                   │ dispatches
                                    ▼
        ┌────────────────────────────────────────────────────────┐
        │         Application Layer (src/*/Application/)         │
        │    (Commands, Queries, Handlers, Process Managers)     │
        └───────────────────────────┬────────────────────────────┘
-                                   │ menggunakan (uses)
+                                   │ uses
                                    ▼
        ┌────────────────────────────────────────────────────────┐
        │            Domain Layer (src/*/Domain/) ◄──────────────┤
        │ (Entities, Value Objects, Enums, Domain Events, Ports) │
        └───────────────────────────▲────────────────────────────┘
-                                   │ diimplementasikan oleh
+                                   │ implemented by
        ┌───────────────────────────┴────────────────────────────┐
        │       Infrastructure Layer (src/*/Infrastructure/)     │
        │      (Repositories, Eloquent Models, Hydrators, DB)    │
        └────────────────────────────────────────────────────────┘
 ```
 
-### Ringkasan Tanggung Jawab Tiap Lapisan:
+### Summary of Layer Responsibilities:
 
-| Lapisan | Direktori | Tanggung Jawab Utama | Ketergantungan yang Diizinkan |
+| Layer | Directory | Primary Responsibility | Permitted Dependencies |
 |---|---|---|---|
-| **Domain** | `src/{BC}/Domain/` | Business rules, invariants, entities, value objects, ports (interfaces). | **TIDAK ADA** (Murni PHP, bebas framework). |
-| **Application** | `src/{BC}/Application/` | Use case orchestration, Commands, Queries, Handlers, Process Managers. | Bergantung pada Domain. |
-| **Infrastructure** | `src/{BC}/Infrastructure/` | Implementasi ports, akses database MySQL/Postgres, Eloquent, third-party SDKs. | Mengimplementasikan interface Domain, memanggil Laravel/DB. |
-| **HTTP (Apps)** | `Apps/Api/` | HTTP routing, input syntax validation, auth access check, DTO mapping, JSON serialization. | Memanggil Application Bus (CommandBus/QueryBus), Domain DTOs/Value Objects. |
+| **Domain** | `src/{BC}/Domain/` | Business rules, invariants, entities, value objects, ports (interfaces). | **NONE** (Pure PHP, framework-agnostic). |
+| **Application** | `src/{BC}/Application/` | Use case orchestration, Commands, Queries, Handlers, Process Managers. | Depends on Domain. |
+| **Infrastructure** | `src/{BC}/Infrastructure/` | Ports implementation, MySQL/Postgres DB access, Eloquent, third-party SDKs. | Implements Domain interfaces, calls Laravel/DB. |
+| **HTTP (Apps)** | `Apps/Api/` | HTTP routing, input syntax validation, auth access checks, DTO mapping, JSON serialization. | Calls Application Bus (CommandBus/QueryBus), Domain DTOs/Value Objects. |
 
 ---
 
-## 🗂️ Struktur Direktori Bounded Context
+## 🗂️ Bounded Context Directory Structure
 
-Setiap Bounded Context di dalam `src/` memiliki struktur internal seragam:
+Every Bounded Context inside `src/` follows a uniform internal structure:
 
 ```
 src/
 ├── {BoundedContextName}/
 │   ├── Domain/
-│   │   ├── Entities/          # Rich Business entities (invariants terlindungi)
-│   │   ├── ValueObjects/      # Objek nilai imutabel (Ids, Money, Email, dll)
-│   │   ├── Enums/             # PHP 8.1+ Enums dengan business helper ringan
-│   │   ├── Events/            # Domain Events (merekam fakta masa lalu)
-│   │   ├── Exceptions/        # Exception domain spesifik (bukan HTTP exception)
-│   │   ├── ReadModels/        # DTO baca teroptimasi untuk query repository
-│   │   ├── Services/          # Domain services (logika multi-entity)
-│   │   └── Repositories/      # Port/Interface repository
+│   │   ├── Entities/          # Rich business entities (invariants protected)
+│   │   ├── ValueObjects/      # Immutable value objects (Ids, Money, Email, etc.)
+│   │   ├── Enums/             # PHP 8.1+ Enums with lightweight business helpers
+│   │   ├── Events/            # Domain Events (recording past facts)
+│   │   ├── Exceptions/        # Domain-specific exceptions (not HTTP exceptions)
+│   │   ├── ReadModels/        # Optimized read DTOs for repository queries
+│   │   ├── Services/          # Domain services (multi-entity logic)
+│   │   └── Repositories/      # Repository ports/interfaces
 │   │
 │   ├── Application/
 │   │   ├── Commands/          # Write operations (Command + Handler -> void)
 │   │   ├── Queries/           # Read operations (Query + Handler -> DTO/ReadModel)
-│   │   ├── ProcessManagers/   # Orkestrasi proses panjang / Saga / Cron
-│   │   ├── Listeners/         # Event listeners untuk domain events
-│   │   └── Projections/       # Pembuat proyeksi read model jika diperlukan
+│   │   ├── ProcessManagers/   # Long-running process orchestration / Saga / Cron
+│   │   ├── Listeners/         # Event listeners for domain events
+│   │   └── Projections/       # Read model projection generators if required
 │   │
 │   └── Infrastructure/
 │       ├── Persistence/       # Repository implementations & Eloquent Models
-│       ├── Hydrators/         # Mapper/Hydrator antara Model DB dan Entity Domain
-│       ├── Gateways/          # Adapter sistem eksternal
+│       ├── Hydrators/         # Mappers/Hydrators between DB Models and Domain Entities
+│       ├── Gateways/          # External system adapters
 │       └── Listeners/         # Infrastructure event listeners (queue, logging)
 ```
 
@@ -89,11 +89,11 @@ src/
 
 ## 🌐 Transversal (Cross-Cutting) Bounded Contexts
 
-Fungsionalitas yang digunakan bersama oleh beberapa Bounded Context diletakkan di `src/Shared/` dengan kriteria berikut:
+Functionality shared across multiple Bounded Contexts is placed in `src/Shared/` following these criteria:
 
-1. **Digunakan oleh berbagai Bounded Context** (tidak spesifik domain tunggal).
-2. **Menyediakan kapabilitas utilitas atau infrastruktur** (bukan business logic inti).
-3. **Realisasi generic capability** (contoh: Saga Engine, Generic Audit Logging, Notification Dispatcher, Search Engine).
+1. **Used across multiple Bounded Contexts** (not specific to a single domain).
+2. **Provides utility or infrastructure capabilities** (not core business logic).
+3. **Implements generic capabilities** (e.g., Saga Engine, Generic Audit Logging, Notification Dispatcher, Search Engine).
 
 ```
 src/Shared/
@@ -104,64 +104,64 @@ src/Shared/
 
 ---
 
-## 🔄 Komunikasi Antar Bounded Context
+## 🔄 Inter-Bounded Context Communication
 
-### 1. Metode Utama: QueryBus dan CommandBus
-Komunikasi antar Bounded Context **HARUS** melalui Application Bus:
+### 1. Primary Method: QueryBus and CommandBus
+Communication between Bounded Contexts **MUST** go through the Application Bus:
 
 ```php
-// Dari Bounded Context A, mengambil data dari Bounded Context B:
+// From Bounded Context A, fetching data from Bounded Context B:
 $client = $this->queryBus->query(new GetClientByIdQuery($clientId));
 
-// Dari Bounded Context A, memicu tindakan di Bounded Context B:
+// From Bounded Context A, triggering an action in Bounded Context B:
 $this->commandBus->dispatch(new CreateInvoiceCommand($invoiceData));
 ```
 
-### 2. Aturan Penggabungan Data Antar BC (Hindari Coupling Database)
-Dilarang melakukan `JOIN` SQL langsung antar tabel milik Bounded Context yang berbeda.
-Lakukan penggabungan data di level Application service/PHP:
+### 2. Cross-BC Data Joining Rules (Prevent Database Coupling)
+Direct SQL `JOIN`s across tables belonging to different Bounded Contexts are forbidden.
+Perform data joins at the Application service / PHP level:
 
 ```php
-// 1. Ambil invoices dari Billing BC
+// 1. Fetch invoices from Billing BC
 $invoices = $this->invoiceQuery->findByRestaurant($restaurantId);
 
-// 2. Kumpulkan Client IDs
+// 2. Collect Client IDs
 $clientIds = array_map(static fn($inv) => $inv->clientId, $invoices);
 
-// 3. Ambil data client dalam 1 query via IN clause ke Client BC
+// 3. Fetch client data in 1 query via IN clause to Client BC
 $clients = $this->clientQuery->findByIds($clientIds);
 
-// 4. Hubungkan data di PHP memory
+// 4. Join data in PHP memory
 foreach ($invoices as $invoice) {
     $invoice->client = $clients[$invoice->clientId] ?? null;
 }
 ```
 
-### 3. Batas Data yang Boleh Keluar dari Bounded Context
+### 3. Data Boundary Permissions Across Bounded Contexts
 
-| Komponen | Boleh Keluar dari BC? | Alasan |
+| Component | Allowed Outside BC? | Rationale |
 |---|---|---|
-| **Entities** | ❌ **TIDAK BOLEH** | Entity memiliki invariant dan state yang hanya boleh dikelola oleh BC asalnya. Gunakan DTO / ReadModel. |
-| **Repositories** | ❌ **TIDAK BOLEH** | Akses data internal tidak boleh diekspos ke BC lain. |
-| **Domain Services** | ❌ **TIDAK BOLEH** | Logika bisnis internal harus tetap privat. |
-| **Simple Value Objects** | ✅ **BOLEH** | Objek nilai sederhana yang stabil seperti `ClientId`, `RestaurantId`, `Money`. |
-| **Enums** | ✅ **BOLEH** | Enumerasi nilai status umum seperti `BookingStatus`, `PaymentStatus`. |
-| **ReadModels / DTOs** | ✅ **BOLEH** | Objek data transfer read-only tanpa perilaku domain. |
+| **Entities** | ❌ **FORBIDDEN** | Entities have invariants and state that must only be managed by their originating BC. Use DTOs / ReadModels. |
+| **Repositories** | ❌ **FORBIDDEN** | Internal data access must not be exposed to other BCs. |
+| **Domain Services** | ❌ **FORBIDDEN** | Internal business logic must remain private. |
+| **Simple Value Objects** | ✅ **ALLOWED** | Simple, stable value objects like `ClientId`, `RestaurantId`, `Money`. |
+| **Enums** | ✅ **ALLOWED** | Common status value enumerations such as `BookingStatus`, `PaymentStatus`. |
+| **ReadModels / DTOs** | ✅ **ALLOWED** | Read-only data transfer objects without domain behaviors. |
 
 ---
 
-## 👥 Peran Domain Expert Sebelum Mengubah Kode BC
+## 👥 Role of Domain Experts Before Modifying BC Code
 
-Setiap Bounded Context memiliki pemilik/expert (Product Owner & Tech Lead).
-Aturan sebelum menyentuh atau memodifikasi Bounded Context lain:
-1. Diskusikan pendekatan dan dampaknya terhadap model domain yang sudah ada.
-2. Hindari membuat "jalan pintas" (shortcut) langsung ke database milik modul lain.
-3. Selalu rancang perubahan menggunakan [Aggregate Design Canvas](https://github.com/ddd-crew/aggregate-design-canvas) jika menambah Aggregate baru.
+Every Bounded Context has owners/experts (Product Owner & Tech Lead).
+Rules before touching or modifying another Bounded Context:
+1. Discuss the approach and its impact on the existing domain model.
+2. Avoid taking shortcuts directly into tables belonging to other modules.
+3. Always design changes using the [Aggregate Design Canvas](https://github.com/ddd-crew/aggregate-design-canvas) when introducing a new Aggregate.
 
 ---
 
-## 🔗 Referensi Dokumen Terkait
-- [02-critical-rules.md](02-critical-rules.md) - Aturan kritis yang tidak boleh dilanggar.
-- [03-application-layer-cqrs.md](03-application-layer-cqrs.md) - Detail implementasi CQRS, Command, Query, dan Event.
-- [04-infrastructure-layer.md](04-infrastructure-layer.md) - Detail Repository, ReadModel, Mapper, dan Eloquent.
-- [presentation-layer/http-layer-patterns.md](../presentation-layer/http-layer-patterns.md) - Pola HTTP Request, Action, DTO, dan Resource.
+## 🔗 Related Documentation References
+- [02-critical-rules.md](02-critical-rules.md) - Critical rules that must not be violated.
+- [03-application-layer-cqrs.md](03-application-layer-cqrs.md) - CQRS, Command, Query, and Event implementation details.
+- [04-infrastructure-layer.md](04-infrastructure-layer.md) - Repository, ReadModel, Mapper, and Eloquent details.
+- [presentation-layer/http-layer-patterns.md](../presentation-layer/http-layer-patterns.md) - HTTP Request, Action, DTO, and Resource patterns.

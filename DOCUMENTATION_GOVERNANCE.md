@@ -1,21 +1,21 @@
 # Documentation Governance & Evolution Policy
 
-Dokumentasi ini mengatur aturan pemeliharaan, pembaruan, dan siklus hidup seluruh dokumen di dalam repositori dokumentasi ini.
+This document governs the maintenance, update, and lifecycle rules for all documents within this documentation repository.
 
 ---
 
-## 🏛️ Prinsip Utama: Pemisahan Prinsip vs Dokumen Hidup
+## 🏛️ Core Principle: Separation of Architectural Invariants vs Living Documents
 
-Dokumentasi dibagi menjadi dua kategori dengan aturan pembaruan yang berbeda:
+The documentation is divided into two categories with different update rules:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    DOKUMENTASI SISTEM                           │
+│                      SYSTEM DOCUMENTATION                       │
 ├────────────────────────────────┬────────────────────────────────┤
-│ 1. Prinsip Arsitektur          │ 2. Dokumen Hidup               │
-│    (Architectural Invariants)  │    (Living Documents)          │
+│ 1. Architectural Principles    │ 2. Living Documents            │
+│    (Architectural Invariants)  │                                │
 │                                │                                │
-│ 🔒 INVARIAN / STATIS           │ 🔄 DAPAT DIUPDATE BERKALA      │
+│ 🔒 INVARIANT / STATIC          │ 🔄 CAN BE UPDATED PERIODICALLY │
 │ - DDD Core Rules               │ - Project Context              │
 │ - Hexagonal Layering           │ - Requirements (Epic/Feature)  │
 │ - Strict CQRS (void commands)  │ - Task Lists & Roadmaps        │
@@ -27,48 +27,48 @@ Dokumentasi dibagi menjadi dua kategori dengan aturan pembaruan yang berbeda:
 
 ---
 
-## 1. Prinsip Arsitektur (Invarian / Statis)
+## 1. Architectural Principles (Invariant / Static)
 
-Dokumen dalam kategori ini meliputi:
+Documents in this category include:
 - `core-architecture/*` (Architecture Overview, Critical Rules, CQRS, Infrastructure, Code Quality)
 - `presentation-layer/*` (HTTP Layer Patterns, Thin Actions, Custom Resources)
 - `development-lifecycle/01-development-workflow.md` (3-Phase Implementation Order)
 
-### Aturan:
-1. **Aturan Invarian**: Prinsip-prinsip ini bersifat baku dan tidak boleh diubah sembarangan saat pengerjaan fitur sehari-hari.
-2. **AI Agent Protection**: AI agent dilarang melonggarkan atau memodifikasi prinsip arsitektur tanpa persetujuan eksplisit dari tim/lead arsitek (misal: dilarang mengizinkan query di dalam loop, dilarang mengembalikan data dari Command, dilarang mengakses `DB::` langsung di Handler).
-3. **Prosedur Perubahan**: Perubahan pada prinsip arsitektur hanya dapat dilakukan melalui **Architectural Decision Record (ADR)** formal yang disepakati oleh domain expert dan tech lead.
+### Rules:
+1. **Invariant Rules**: These principles are fixed and must not be altered arbitrarily during routine feature development.
+2. **AI Agent Protection**: AI agents are forbidden from loosening or modifying architectural principles without explicit approval from the team/lead architect (e.g., forbidden to allow queries in loops, forbidden to return data from Commands, forbidden to access `DB::` directly in Handlers).
+3. **Change Procedure**: Modifications to architectural principles can only be made through a formal **Architectural Decision Record (ADR)** agreed upon by domain experts and tech leads.
 
 ---
 
-## 2. Dokumen Hidup (Dapat & Harus Diupdate Berkala)
+## 2. Living Documents (Can & Must Be Updated Periodically)
 
-Dokumen dalam kategori ini meliputi:
-- `PROJECT_CONTEXT.md` (Profil, modul, konfigurasi, dan status project aktif)
-- `development-lifecycle/02-requirements-engineering.md` & template
-- Dokumen working docs (`docs/working_docs/epics/*`, `features/*`, `hotfixes/*`, `cases/*`)
-- Dokumen pelaporan (`docs/Reports/YYYY-MM-DD-*.md`)
-- Task list per fitur (`[feature]_tasks.md`)
+Documents in this category include:
+- `PROJECT_CONTEXT.md` (Active project profile, modules, configurations, and status)
+- `development-lifecycle/02-requirements-engineering.md` & templates
+- Working documents (`docs/working_docs/epics/*`, `features/*`, `hotfixes/*`, `cases/*`)
+- Reporting documents (`docs/Reports/YYYY-MM-DD-*.md`)
+- Per-feature task lists (`[feature]_tasks.md`)
 
-### Aturan Pembaruan Berkala:
-1. **Sinkronisasi Berkala**: Dokumen hidup **wajib dan dapat diperbarui secara berkala** seiring berjalannya sprint, penambahan modul baru, perubahan dependensi, atau penyelesaian milestone.
-2. **Kewenangan AI Agent**:
-   - AI agent **berhak dan dianjurkan** memperbarui `PROJECT_CONTEXT.md` ketika mendeteksi perubahan lingkungan, bounded context baru, migrasi skema baru, atau endpoint baru.
-   - AI agent harus memperbarui task list status (checklist `[x]`) setiap kali suatu sub-task selesai diimplementasikan.
-   - AI agent wajib membuat atau memperbarui dokumen audit/report ketika menjalankan proses validasi atau audit arsitektur.
-3. **Kejelasan Historis**: Setiap pembaruan dokumen hidup harus mencantumkan konteks atau alasan perubahan (misalnya: penambahan Bounded Context baru, pembaruan versi PHP/Laravel, atau temuan investigasi insiden).
+### Periodic Update Rules:
+1. **Periodic Synchronization**: Living documents **must and can be updated periodically** as sprints progress, new modules are introduced, dependencies change, or milestones are achieved.
+2. **AI Agent Authority**:
+   - AI agents **are authorized and encouraged** to update `PROJECT_CONTEXT.md` upon detecting environment changes, new bounded contexts, new schema migrations, or new endpoints.
+   - AI agents must update task list statuses (checklist `[x]`) whenever a sub-task is completed.
+   - AI agents must generate or update audit/report documents when executing architectural validation or audit processes.
+3. **Historical Clarity**: Every update to living documents must provide context or rationale for the change (e.g., addition of a new Bounded Context, PHP/Laravel version upgrades, or incident investigation findings).
 
 ---
 
-## 📋 Checklist bagi AI Agent Sebelum Memodifikasi Dokumen
+## 📋 AI Agent Checklist Before Modifying Documents
 
-Sebelum melakukan edit pada dokumen mana pun:
+Before editing any document:
 
-- [ ] **Identifikasi Kategori**: Apakah dokumen ini adalah *Prinsip Arsitektur* atau *Dokumen Hidup*?
-- [ ] **Jika Prinsip Arsitektur**:
-  - Apakah user secara eksplisit meminta perubahan aturan arsitektur?
-  - Jika TIDAK, pertahankan aturan dan jangan ubah prinsip dasarnya.
-- [ ] **Jika Dokumen Hidup**:
-  - Perbarui data terbaru (status project, konfigurasi, bounded context, dll).
-  - Pastikan format tetap rapi dan konsisten dengan template standar.
-  - Perbarui timestamp tanggal pembaruan terakhir.
+- [ ] **Identify Category**: Is this document an *Architectural Principle* or a *Living Document*?
+- [ ] **If Architectural Principle**:
+  - Did the user explicitly request a change to architectural rules?
+  - If NO, preserve the rules and do not alter foundational principles.
+- [ ] **If Living Document**:
+  - Update with the latest data (project status, configurations, bounded contexts, etc.).
+  - Ensure formatting remains clean and consistent with standard templates.
+  - Update the last updated timestamp.

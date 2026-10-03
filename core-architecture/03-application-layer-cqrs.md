@@ -1,10 +1,10 @@
 # 03 - Application Layer & CQRS Patterns
 
-Panduan lengkap mengenai penerapan **Command Query Responsibility Segregation (CQRS)**, **Queries**, **Commands**, **Process Managers (Saga)**, dan **Domain Events** di Application Layer.
+Comprehensive guide to applying **Command Query Responsibility Segregation (CQRS)**, **Queries**, **Commands**, **Process Managers (Sagas)**, and **Domain Events** in the Application Layer.
 
 ---
 
-## 🧭 Prinsip CQRS
+## 🧭 CQRS Principles
 
 ```
                       ┌─────────────────────────────────────────┐
@@ -22,30 +22,30 @@ Panduan lengkap mengenai penerapan **Command Query Responsibility Segregation (C
                  ▼                                                   ▼
 ┌─────────────────────────────────┐                 ┌─────────────────────────────────┐
 │         CommandHandler          │                 │          QueryHandler           │
-│ - Ubah state entity domain      │                 │ - Ambil data teroptimasi        │
-│ - Simpan via Repository         │                 │ - Return ReadModel / DTO        │
+│ - Mutate domain entity state    │                 │ - Fetch optimized data          │
+│ - Persist via Repository        │                 │ - Return ReadModel / DTO        │
 │ - Publish Domain Events         │                 │ - Stateless & Caching           │
-│ - Return VOID                   │                 │ - TIDAK mengubah state          │
+│ - Return VOID                   │                 │ - Does NOT mutate state         │
 └─────────────────────────────────┘                 └─────────────────────────────────┘
 ```
 
 ---
 
-## 📖 1. Queries (Operasi Baca)
+## 📖 1. Queries (Read Operations)
 
-Queries bertugas mengambil data untuk ditampilkan ke pengguna atau dikonsumsi sistem lain tanpa mengubah status sistem (*side-effect free*).
+Queries are responsible for fetching data to display to users or consume in other systems without mutating system state (*side-effect free*).
 
-### Aturan Utama Queries:
-1. **PHPDoc Wajib**: Setiap query harus mencantumkan anotasi `@see` ke Handlernya dan return type DTO-nya.
-2. **Stateless Handlers**: Seluruh properti Handler wajib `readonly`. Untuk cache, gunakan sistem caching eksternal, bukan menyimpan state di properti class.
-3. **Return Type yang Diizinkan**:
-   - ✅ **ReadModel** langsung
-   - ✅ **DTO** yang berisi Value Objects sederhana dan Enums
+### Core Rules for Queries:
+1. **Mandatory PHPDoc**: Every query must include an `@see` annotation linking to its Handler and specifying its return type DTO.
+2. **Stateless Handlers**: All Handler properties must be `readonly`. For caching, use external cache systems rather than storing state in class properties.
+3. **Permitted Return Types**:
+   - ✅ **ReadModel** directly
+   - ✅ **DTO** composed of simple Value Objects and Enums
    - ✅ **Primitive types** (int, string, bool, float)
-   - ✅ **Array/Collection** dari DTO/ReadModel
-   - ❌ **DILARANG mengembalikan Entity Domain** (agar tidak bocor ke lapisan luar).
+   - ✅ **Array/Collection** of DTOs/ReadModels
+   - ❌ **FORBIDDEN to return Domain Entities** (to prevent leakage to outer layers).
 
-### Contoh Query & Handler:
+### Example Query & Handler:
 
 ```php
 /**
@@ -78,46 +78,46 @@ final readonly class GetBookingByIdHandler implements QueryHandlerInterface
 }
 ```
 
-### Konvensi Penamaan Query
+### Query Naming Conventions
 
-#### Verba (Kata Kerja):
-- **`Get`**: Berharap data pasti ditemukan. Jika tidak ada, Handler melempar `NotFoundException`.
-  - Contoh: `GetClientByIdQuery`, `GetRestaurantByIdQuery`
-- **`Find`**: Data mungkin ada atau tidak ada (opsional). Mengembalikan `null` atau `array` kosong jika tidak ditemukan.
-  - Contoh: `FindBookingsByDateQuery`, `FindClientByEmailQuery`
-- **`Search`**: Pencarian dengan filter dinamis, paginasi, atau full-text search.
-  - Contoh: `SearchClientsQuery`, `SearchBookingsQuery`
+#### Verbs:
+- **`Get`**: Expects data to strictly exist. If not found, Handler throws `NotFoundException`.
+  - Examples: `GetClientByIdQuery`, `GetRestaurantByIdQuery`
+- **`Find`**: Data may or may not exist (optional). Returns `null` or an empty `array` when not found.
+  - Examples: `FindBookingsByDateQuery`, `FindClientByEmailQuery`
+- **`Search`**: Search queries with dynamic filters, pagination, or full-text search.
+  - Examples: `SearchClientsQuery`, `SearchBookingsQuery`
 
-#### Ajektiva (Bentuk Output):
-- **`Ref`**: Mengembalikan DTO minimal (hanya ID dan nama/field kunci).
-  - Contoh: `GetClientRefQuery`
-- **`Detail`**: Mengembalikan seluruh data entitas itu sendiri (tanpa relasi berat).
-  - Contoh: `GetClientDetailQuery`
-- **`Full`**: Mengembalikan data lengkap beserta seluruh relasi yang dibutuhkan.
-  - Contoh: `GetClientFullQuery`
-- **`List`**: Mengembalikan daftar data terpaginasi dan terdenormalisasi.
-  - Contoh: `SearchClientListQuery`
+#### Adjectives (Output Forms):
+- **`Ref`**: Returns a minimal DTO (only ID and name/key fields).
+  - Example: `GetClientRefQuery`
+- **`Detail`**: Returns all data of the entity itself (without heavy relationships).
+  - Example: `GetClientDetailQuery`
+- **`Full`**: Returns complete data including all required relations.
+  - Example: `GetClientFullQuery`
+- **`List`**: Returns a paginated, denormalized list of records.
+  - Example: `SearchClientListQuery`
 
-### Aturan Penambahan Field ke Query yang Ada:
-1. **Jika field berguna bagi semua konsumen & tidak butuh query tambahan**: Tambahkan langsung ke DTO yang sudah ada.
-2. **Jika field hanya berguna untuk use case spesifik & membutuhkan query berat**:
-   - Tambahkan flag opsional di Query (misal: `bool $withMarketingInfo = false`), ATAU
-   - Buat Query baru yang spesifik (misal: `GetClientMarketingRefQuery`).
+### Rules for Adding Fields to Existing Queries:
+1. **If the field is useful to all consumers & requires no extra query**: Add it directly to the existing DTO.
+2. **If the field is only needed for a specific use case & requires a heavy query**:
+   - Add an optional flag to the Query (e.g., `bool $withMarketingInfo = false`), OR
+   - Create a dedicated new Query (e.g., `GetClientMarketingRefQuery`).
 
 ---
 
-## ✍️ 2. Commands (Operasi Tulis)
+## ✍️ 2. Commands (Write Operations)
 
-Commands merepresentasikan niat untuk mengubah state bisnis dalam sistem.
+Commands represent an intent to change business state within the system.
 
-### Aturan Utama Commands:
-1. **Commands SELALU Return `void`**: Dilarang mengembalikan ID atau nilai apa pun.
-2. **ID Digenerate di Awal**: Caller membuat ID (contoh: `BookingId::random()`) dan menyertakannya di parameter Command.
-3. **Imperative Naming**: Nama command berupa kalimat perintah waktu sekarang (`CreateBookingCommand`, `CancelBookingCommand`, `ConfirmBookingCommand`).
-4. **Hanya Memuat Data**: Command adalah Data Transfer Object murni tanpa logika bisnis.
-5. **Logika Bisnis di Entity / Domain Service**: Handler hanya bertugas mengambil entity, memanggil method di entity, menyimpan via repository, dan mem-publish event.
+### Core Rules for Commands:
+1. **Commands ALWAYS Return `void`**: Forbidden from returning IDs or any value.
+2. **IDs Generated Upfront**: Caller creates the ID (e.g., `BookingId::random()`) and passes it in the Command parameters.
+3. **Imperative Naming**: Command names use present-tense imperative verbs (`CreateBookingCommand`, `CancelBookingCommand`, `ConfirmBookingCommand`).
+4. **Data-Only**: Commands are pure Data Transfer Objects without business logic.
+5. **Business Logic in Entity / Domain Service**: The Handler only retrieves the entity, invokes methods on the entity, saves via the repository, and publishes events.
 
-### Contoh Command & Handler:
+### Example Command & Handler:
 
 ```php
 /**
@@ -129,7 +129,7 @@ final readonly class CreateBookingCommand implements CommandInterface
      * @param array<array{type: string, quantity: int}> $products
      */
     public function __construct(
-        public BookingId $id,             // ID DITERUSKAN DARI CALLER
+        public BookingId $id,             // ID PASSED IN FROM CALLER
         public ClientId $clientId,
         public RestaurantId $restaurantId,
         public DateTimeImmutable $timeSlot,
@@ -148,7 +148,7 @@ final readonly class CreateBookingHandler implements CommandHandlerInterface
 
     public function __invoke(CreateBookingCommand $command): void
     {
-        // 1. Eksekusi pembuatan entity via factory method
+        // 1. Execute entity creation via factory method
         $booking = Booking::create(
             id: $command->id,
             clientId: $command->clientId,
@@ -159,27 +159,27 @@ final readonly class CreateBookingHandler implements CommandHandlerInterface
             products: $command->products
         );
 
-        // 2. Simpan ke database
+        // 2. Persist to database
         $this->repository->store($booking);
 
-        // 3. Publish domain events yang direkam oleh entity
+        // 3. Publish domain events recorded by entity
         $this->eventBus->publishEvents($booking->releaseEvents());
 
-        // VOID: Tidak ada return value!
+        // VOID: No return value!
     }
 }
 ```
 
 ---
 
-## 🔄 3. Process Managers (Saga & Long-Running Workflows)
+## 🔄 3. Process Managers (Sagas & Long-Running Workflows)
 
-Gunakan Process Manager jika terdapat alur proses bisnis yang melibatkan banyak command, cron background job, atau orkestrasi lintas Bounded Context.
+Use Process Managers when a business workflow spans multiple commands, cron background jobs, or orchestrates across multiple Bounded Contexts.
 
-### Karakteristik:
-- Lokasi: `Application/ProcessManagers/`
-- Konvensi nama: Suffix `Process` untuk command dan `ProcessHandler` untuk handler.
-- **TIDAK memiliki return value** (hanya orkestrator efek samping).
+### Characteristics:
+- Location: `Application/ProcessManagers/`
+- Naming convention: Suffix `Process` for command and `ProcessHandler` for handler.
+- **NO return value** (solely orchestrates side-effects).
 
 ```php
 final readonly class SendDailyReportProcess implements CommandInterface
@@ -199,13 +199,13 @@ final readonly class SendDailyReportProcessHandler
 
     public function __invoke(SendDailyReportProcess $process): void
     {
-        // 1. Ambil data melalui QueryBus
+        // 1. Fetch data via QueryBus
         $bookings = $this->queryBus->query(new GetBookingsByDateQuery($process->date));
 
-        // 2. Olah laporan
+        // 2. Process report
         $reportData = $this->generateReport($bookings);
 
-        // 3. Picu pengiriman email melalui CommandBus
+        // 3. Trigger email dispatch via CommandBus
         $this->commandBus->dispatch(new SendEmailReportCommand($process->restaurantId, $reportData));
     }
 }
@@ -215,12 +215,12 @@ final readonly class SendDailyReportProcessHandler
 
 ## 📢 4. Domain Events & Event Listeners
 
-Domain Event merekam sesuatu yang **sudah terjadi di masa lalu** dalam domain (`BookingCreatedEvent`, `BookingConfirmedEvent`).
+A Domain Event records something that has **already happened in the past** within the domain (`BookingCreatedEvent`, `BookingConfirmedEvent`).
 
-### Aturan Payload Event:
-- ❌ **Jangan hanya menyimpan ID saja**: Konsumen akan terpaksa melakukan query berulang untuk data sederhana.
-- ❌ **Jangan menyimpan seluruh Entity**: Menyebabkan tight-coupling antar event subscriber.
-- ✅ **Simpan data esensial yang berubah**:
+### Event Payload Rules:
+- ❌ **Do not store only IDs**: Consumers would be forced into repeated queries for simple data.
+- ❌ **Do not store the entire Entity**: Causes tight coupling between event subscribers.
+- ✅ **Store essential mutated data**:
   ```php
   final readonly class BookingConfirmedEvent extends BaseDomainEvent
   {
@@ -241,9 +241,9 @@ Domain Event merekam sesuatu yang **sudah terjadi di masa lalu** dalam domain (`
   }
   ```
 
-### Eventual Consistency & Validasi Ulang:
-Jika listener berjalan di latar belakang (Queue/Async), jangan mempercayai seluruh isi event untuk pengambilan keputusan kritis, karena data di database mungkin sudah berubah. Selalu baca state terkini dari repository jika memerlukan validasi konsistensi.
+### Eventual Consistency & Re-Validation:
+When a listener runs in the background (Queue/Async), never blindly trust the entire event payload for critical decisions, as database data may have changed. Always re-fetch the latest state from the repository when consistency validation is required.
 
-### Klasifikasi Listener:
-- **Business Listeners** (`Application/Listeners/`): Bereaksi terhadap domain event untuk memicu aturan bisnis lain.
-- **Infrastructure Listeners** (`Infrastructure/Listeners/`): Bereaksi terhadap event untuk integrasi luar, audit log, atau forwarder ke message broker (RabbitMQ/Kafka).
+### Listener Classification:
+- **Business Listeners** (`Application/Listeners/`): React to domain events to trigger downstream business rules.
+- **Infrastructure Listeners** (`Infrastructure/Listeners/`): React to events for external integration, audit logging, or forwarding to message brokers (RabbitMQ/Kafka).

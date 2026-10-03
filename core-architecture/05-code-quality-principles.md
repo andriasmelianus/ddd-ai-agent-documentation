@@ -1,16 +1,16 @@
 # 05 - Code Quality & Domain Best Practices
 
-Panduan standar kualitas kode: **Prinsip SOLID dalam DDD**, **Stateless Services**, **Rich Domain Entities vs Domain Services**, **Enums Berdaya Guna**, dan **Konvensi Penamaan**.
+Code quality standards guide: **SOLID Principles in DDD**, **Stateless Services**, **Rich Domain Entities vs Domain Services**, **Expressive Enums**, and **Naming Conventions**.
 
 ---
 
-## 💎 Prinsip SOLID dalam Konteks DDD
+## 💎 SOLID Principles in the Context of DDD
 
 ### 1. Single Responsibility Principle (SRP)
-**Definisi**: Sebuah class harus fokus menyelesaikan **SATU masalah bisnis**, bukan hanya memiliki satu method.
+**Definition**: A class must focus on solving **ONE business problem**, not merely contain a single method.
 
 ```php
-// ✅ BENAR: Satu tanggung jawab (Akses data Client)
+// ✅ CORRECT: Single responsibility (Client data access)
 class ClientRepository implements ClientRepositoryInterface
 {
     public function findById(ClientId $id): ?Client {}
@@ -18,38 +18,38 @@ class ClientRepository implements ClientRepositoryInterface
     public function store(Client $client): void {}
 }
 
-// Jika class bertumbuh terlalu besar (> 500 baris):
-// Pisahkan menjadi sub-tanggung jawab:
-// - ClientRepository (Operasi write & aggregate core)
-// - ClientRMQueryRepository (Operasi read model & analytics query)
+// If a class grows excessively large (> 500 lines):
+// Split into sub-responsibilities:
+// - ClientRepository (Core aggregate & write operations)
+// - ClientRMQueryRepository (Read model & analytics query operations)
 ```
 
 ### 2. Dependency Principle — "Ask Only What You Need"
-**Definisi**: Sebuah method sebaiknya hanya meminta parameter yang benar-benar diperlukannya, bukan keseluruhan object besar.
+**Definition**: A method should only request parameters it genuinely needs, rather than requiring an entire large object.
 
 ```php
-// ❌ SALAH: Meminta seluruh Entity Client padahal hanya butuh email
+// ❌ WRONG: Requesting the entire Client Entity when only the email is needed
 public function sendWelcomeNotification(Client $client): void
 {
     $this->mailer->send($client->email(), 'Welcome!');
 }
 
-// ✅ BENAR: Hanya minta apa yang dibutuhkan
+// ✅ CORRECT: Ask only for what is needed
 public function sendWelcomeNotification(string $email): void
 {
     $this->mailer->send($email, 'Welcome!');
 }
 ```
-*Manfaat*: Sangat mudah di-unit test (tidak butuh mock Client yang rumit), dapat digunakan ulang untuk entitas lain, dan kebal dari perubahan struktur Client.
+*Benefits*: Trivial to unit test (no cumbersome Client mocks required), reusable across other entities, and immune to structural changes in the Client entity.
 
 ---
 
 ## ⚡ Stateless Business Services
 
-Class Service dan Handler **DILARANG menyimpan state** di properti instance class:
+Service classes and Handlers are **STRICTLY FORBIDDEN from storing state** in instance properties:
 
 ```php
-// ❌ SALAH: Menyimpan state (rentan race condition dan urutan pemanggilan)
+// ❌ WRONG: Storing state (susceptible to race conditions and execution ordering bugs)
 class PriceCalculator
 {
     private float $subtotal = 0; // STATE!
@@ -58,7 +58,7 @@ class PriceCalculator
     public function getTotal(): float { return $this->subtotal; }
 }
 
-// ✅ BENAR: Stateless Service
+// ✅ CORRECT: Stateless Service
 final readonly class PriceCalculator
 {
     public function __construct(
@@ -72,31 +72,32 @@ final readonly class PriceCalculator
 }
 ```
 
-*Pengecualian*: Class report generator khusus yang memiliki **hanya satu entry point** (`public function __invoke()`) di mana state internal dibersihkan dan diinisialisasi ulang pada setiap pemanggilan.
+*Exception*: Dedicated report generator classes that have **strictly one entry point** (`public function __invoke()`) where internal state is wiped and reinitialized on each invocation.
 
 ---
 
-## 🧠 Rich Entities vs Domain Services: Apa yang Masuk ke Mana?
+## 🧠 Rich Entities vs Domain Services: What Goes Where?
 
 ```
 ┌───────────────────────────────────────┬───────────────────────────────────────┐
-│         LOGIKA DALAM ENTITY           │      LOGIKA DALAM DOMAIN SERVICE      │
+│          LOGIC WITHIN ENTITY          │      LOGIC WITHIN DOMAIN SERVICE      │
 ├───────────────────────────────────────┼───────────────────────────────────────┤
-│ ✅ Menjaga Invariant & validasi state │ ✅ Aturan yang melibatkan BANYAK      │
-│ ✅ Perhitungan internal entity        │    entitas berbeda                    │
-│ ✅ Transisi status entitas            │ ✅ Validasi yang memerlukan akses DB  │
-│ ✅ Mencatat domain events internal    │    (memerlukan Repository)            │
-│ ❌ Dilarang inject Repository ke sini │ ✅ Koordinasi operasi antar entitas   │
+│ ✅ Enforcing Invariants & state       │ ✅ Rules involving MULTIPLE distinct  │
+│    validation                         │    entities                           │
+│ ✅ Internal entity calculations       │ ✅ Validations requiring DB access    │
+│ ✅ Entity status transitions          │    (requires Repository)              │
+│ ✅ Recording internal domain events   │ ✅ Coordinating operations across     │
+│ ❌ Never inject Repositories here     │    entities                           │
 └───────────────────────────────────────┴───────────────────────────────────────┘
 ```
 
-### Contoh Logika dalam Entity:
+### Example of Logic within an Entity:
 ```php
 final class Client extends BaseEntity
 {
     public function changeEmail(string $newEmail): void
     {
-        // Validasi invariant
+        // Invariant validation
         if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
             throw new InvalidEmailException($newEmail);
         }
@@ -112,7 +113,7 @@ final class Client extends BaseEntity
 }
 ```
 
-### Contoh Logika dalam Domain Service:
+### Example of Logic within a Domain Service:
 ```php
 final readonly class ValidateBookingAvailabilityService
 {
@@ -122,7 +123,7 @@ final readonly class ValidateBookingAvailabilityService
 
     public function isSlotAvailable(RestaurantId $restaurantId, DateTimeImmutable $timeSlot): bool
     {
-        // Memerlukan akses ke repository database
+        // Requires database repository access
         $existing = $this->bookingRepository->findByRestaurantAndSlot($restaurantId, $timeSlot);
         return $existing === null;
     }
@@ -131,11 +132,11 @@ final readonly class ValidateBookingAvailabilityService
 
 ---
 
-## 🏷️ Pemanfaatan Enums dalam PHP 8+
+## 🏷️ Expressive Enums in PHP 8+
 
-Enums diizinkan memiliki behavior fungsional ringan untuk dekorasi, bisnis mini, dan translasi sistem eksternal:
+Enums are permitted to contain lightweight functional behaviors for presentation labels, tightly coupled mini-rules, and external system translations:
 
-### 1. Dekorasi Label & Translasi:
+### 1. Label Decoration & Translation:
 ```php
 enum BookingStatus: string
 {
@@ -146,15 +147,15 @@ enum BookingStatus: string
     public function label(): string
     {
         return match($this) {
-            self::PENDING => 'Menunggu Konfirmasi',
-            self::CONFIRMED => 'Terkonfirmasi',
-            self::CANCELLED => 'Dibatalkan',
+            self::PENDING => 'Pending Confirmation',
+            self::CONFIRMED => 'Confirmed',
+            self::CANCELLED => 'Cancelled',
         };
     }
 }
 ```
 
-### 2. Mini Business Rules Erat:
+### 2. Tightly Coupled Mini Business Rules:
 ```php
 enum ClientTier: string
 {
@@ -173,7 +174,7 @@ enum ClientTier: string
 }
 ```
 
-### 3. Pemetaan Sistem Eksternal:
+### 3. External System Mapping:
 ```php
 enum ExternalPaymentGatewayStatus: string
 {
@@ -190,17 +191,17 @@ enum ExternalPaymentGatewayStatus: string
 }
 ```
 
-*Batasan*: Jangan masukkan logika kompleks atau dependensi I/O ke dalam Enum. Logika kompleks harus berada di Domain Service.
+*Constraint*: Do not embed complex logic or I/O dependencies inside Enums. Complex logic belongs in Domain Services.
 
 ---
 
-## ✍️ Standar Penamaan & Bahasa
+## ✍️ Naming Standards & Ubiquitous Language
 
-1. **Konsistensi Istilah Domain**:
-   - Gunakan istilah standar bahasa Inggris: `Booking` (bukan campur aduk `Reservs`, `Reservation`, `Pemesanan`).
-2. **Hindari Pseudo-English ("Comprove")**:
-   - ❌ Jangan gunakan `comproveBooking()` (bukan bahasa Inggris).
-   - ✅ Gunakan:
-     - `validateBooking()` — memeriksa aturan bisnis.
-     - `checkBooking()` — memverifikasi kondisi.
-     - `ensureBooking()` — memastikan kepastian.
+1. **Ubiquitous Domain Terminology**:
+   - Use standard English terms consistently: `Booking` (avoid mixing `Reservs`, `Reservation`, `Pemesanan`).
+2. **Avoid Pseudo-English ("Comprove")**:
+   - ❌ Do not use `comproveBooking()` (not standard English).
+   - ✅ Use:
+     - `validateBooking()` — verify business rules.
+     - `checkBooking()` — inspect conditions.
+     - `ensureBooking()` — guarantee invariants.
