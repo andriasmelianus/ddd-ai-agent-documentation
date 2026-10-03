@@ -1,6 +1,6 @@
 # HTTP Layer Architecture Patterns (Action-Request-Dto-Res)
 
-Architecture standards guide for the HTTP Layer under **Apps/Api/**: The **Action**, **FormRequest**, **Input DTO**, **Custom API Resource (`XxxRes`)**, and **Controller** pattern.
+Architecture standards guide for the HTTP Layer under **features/Api/**: The **Action**, **FormRequest**, **Input DTO**, **Custom API Resource (`XxxRes`)**, and **Controller** pattern.
 
 ---
 
@@ -52,12 +52,12 @@ Architecture standards guide for the HTTP Layer under **Apps/Api/**: The **Actio
 
 ---
 
-## 🗂️ Directory Structure: `Apps/Api/`
+## 🗂️ Directory Structure: `features/Api/`
 
 Each module in the HTTP Layer is organized by *use case / action*:
 
 ```
-Apps/Api/
+features/Api/
 ├── Booking/                           # Bounded context / Module
 │   ├── Create/                        # Use case: Create Booking
 │   │   ├── CreateBookingAction.php    # Thin action orchestrator

@@ -11,7 +11,7 @@ This system's architecture is built on 4 main pillars:
 1. **Domain-Centric (Framework-Agnostic)**: Core business logic (Domain) is placed inside the `src/` directory, entirely free of dependencies on the Laravel framework, databases, or HTTP protocols.
 2. **Hexagonal Architecture**: Strict separation between business logic and the external world using Ports (Interfaces) in the domain and Adapters (Implementations) in infrastructure/apps.
 3. **CQRS (Command Query Responsibility Segregation)**: Total separation between write operations (Command -> void) and read operations (Query -> DTO/ReadModel).
-4. **Thin Presentation Layer**: The HTTP layer (`Apps/Api/`) functions solely as a thin orchestrator that validates syntax, maps to DTOs, delegates to the Bus, and formats output.
+4. **Thin Presentation Layer**: The HTTP layer (`features/Api/`) functions solely as a thin orchestrator that validates syntax, maps to DTOs, delegates to the Bus, and formats output.
 
 ---
 
@@ -21,7 +21,7 @@ Dependencies always point inwards (towards the Domain Layer). The Domain never d
 
 ```
        ┌────────────────────────────────────────────────────────┐
-       │               HTTP / Apps Layer (Apps/)                │
+       │               HTTP / Apps Layer (features/)                │
        │  (Controllers, FormRequests, Actions, API Resources)   │
        └───────────────────────────┬────────────────────────────┘
                                    │ dispatches
@@ -50,7 +50,7 @@ Dependencies always point inwards (towards the Domain Layer). The Domain never d
 | **Domain** | `src/{BC}/Domain/` | Business rules, invariants, entities, value objects, ports (interfaces). | **NONE** (Pure PHP, framework-agnostic). |
 | **Application** | `src/{BC}/Application/` | Use case orchestration, Commands, Queries, Handlers, Process Managers. | Depends on Domain. |
 | **Infrastructure** | `src/{BC}/Infrastructure/` | Ports implementation, MySQL/Postgres DB access, Eloquent, third-party SDKs. | Implements Domain interfaces, calls Laravel/DB. |
-| **HTTP (Apps)** | `Apps/Api/` | HTTP routing, input syntax validation, auth access checks, DTO mapping, JSON serialization. | Calls Application Bus (CommandBus/QueryBus), Domain DTOs/Value Objects. |
+| **HTTP (Apps)** | `features/Api/` | HTTP routing, input syntax validation, auth access checks, DTO mapping, JSON serialization. | Calls Application Bus (CommandBus/QueryBus), Domain DTOs/Value Objects. |
 
 ---
 

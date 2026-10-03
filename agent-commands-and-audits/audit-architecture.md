@@ -19,7 +19,7 @@ Prompts and instructions for AI Agents (Gemini, Claude, ChatGPT, Cursor, etc.) t
 ## 🎯 Audit Instructions for AI Agents
 
 When requested to conduct an architectural audit:
-1. Scan the entire codebase under `Apps/` and `src/`.
+1. Scan the entire codebase under `features/` and `src/`.
 2. Analyze code against the 8 critical compliance areas below.
 3. Categorize findings by severity: **CRITICAL**, **HIGH**, and **MEDIUM**.
 4. Save the audit findings report to a markdown file at: `docs/Reports/YYYY-MM-DD-audit-architecture.md`.
@@ -29,7 +29,7 @@ When requested to conduct an architectural audit:
 ## 🔍 8 Mandatory Compliance Areas to Inspect:
 
 ### 1. HTTP Layer — Actions (CRITICAL)
-Location: `Apps/Api/**/*/Action.php`
+Location: `features/Api/**/*/Action.php`
 - ❌ **Violations**:
   - Calling `DB::table()`, `DB::statement()`, or Query Builder.
   - Calling Eloquent Models (`Model::find()`, `Model::where()`).
@@ -42,7 +42,7 @@ Location: `Apps/Api/**/*/Action.php`
   - Performs solely: access verification (JWT), command/query dispatch, and returning `XxxRes` via `ResService`.
 
 ### 2. HTTP Layer — Requests (CRITICAL)
-Location: `Apps/Api/**/*/Request.php`
+Location: `features/Api/**/*/Request.php`
 - ❌ **Violations**:
   - Missing `getDto(): XxxDto` method.
   - Passing raw request data or untyped data to Actions/Handlers.
@@ -78,7 +78,7 @@ Location: `src/**/Domain/Entities/*.php`
   - Static method `reconstitute(...)` for database hydration (without Domain Events).
 
 ### 6. Database Performance — Queries in Loops (CRITICAL)
-Location: All files across `src/` and `Apps/`
+Location: All files across `src/` and `features/`
 - ❌ **Violations**:
   - Repository invocations or database queries executed inside loops (`foreach`, `while`).
 - ✅ **Standard**:

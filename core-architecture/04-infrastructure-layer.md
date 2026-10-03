@@ -24,26 +24,41 @@ The infrastructure layer resides in `src/{BoundedContext}/Infrastructure/` and i
    - ✅ `array<Entity>` or `array<ReadModel>`
    - ✅ Scalar values (`int`, `string`, `bool`, `float`) or `null`
    - ❌ **FORBIDDEN to return raw Query Builder results (`stdClass`, `Collection<Model>`) directly to the Application Layer.**
-3. **Splitting Large Repositories**: If a Repository grows excessively large (> 300 lines or numerous complex queries), split read queries into a dedicated class:
-   - `ClientRepository` (write operations, save, delete, findById)
-   - `ClientRMQueryRepository` (aggregation read operations, statistics, report projections)
+3. **MANDATORY CQRS Separation (Read vs Write Patterns)**:
+   Persistence interfaces must ALWAYS be segregated into distinct Read and Write patterns:
+   - **`*RepositoryInterface` (Write)**: Used by Command Handlers. Methods: `save(Entity $entity): void`, `delete(Id $id): void`, `findById(Id $id): ?Entity` (strictly for loading aggregate to mutate).
+   - **`*QueryInterface` (Read)**: Used by Query Handlers. Methods: queries returning `ReadModel` (`*RM`), `array<ReadModel>`, or scalars. **FORBIDDEN from returning Domain Entities**.
 
 ### Interface & Implementation Example:
 
 ```php
-// 1. Interface in Domain (src/Reservation/Domain/Repositories/BookingRepositoryInterface.php)
+// 1. Write Interface in Domain (src/Reservation/Domain/Repositories/BookingRepositoryInterface.php)
 namespace Src\Reservation\Domain\Repositories;
 
 use Src\Reservation\Domain\Entities\Booking;
 use Src\Reservation\Domain\ValueObjects\BookingId;
-use Src\Reservation\Domain\ValueObjects\ClientId;
 
 interface BookingRepositoryInterface
 {
     public function findById(BookingId $id): ?Booking;
-    public function findByClientId(ClientId $clientId): array;
-    public function store(Booking $booking): void;
+    public function save(Booking $booking): void;
     public function delete(BookingId $id): void;
+}
+
+// 2. Read Interface in Domain / Application (src/Reservation/Domain/Repositories/BookingQueryInterface.php)
+namespace Src\Reservation\Domain\Repositories;
+
+use Src\Reservation\Domain\ReadModels\BookingDetailRM;
+use Src\Reservation\Domain\ReadModels\BookingListItemRM;
+use Src\Reservation\Domain\ValueObjects\BookingId;
+use Src\Reservation\Domain\ValueObjects\ClientId;
+
+interface BookingQueryInterface
+{
+    public function findById(BookingId $id): ?BookingDetailRM;
+    /** @return BookingListItemRM[] */
+    public function findByClientId(ClientId $clientId): array;
+    public function exists(BookingId $id): bool;
 }
 
 // 2. Implementation in Infrastructure (src/Reservation/Infrastructure/Persistence/BookingRepository.php)

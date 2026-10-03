@@ -220,6 +220,22 @@ To blend the strengths of the Laravel ecosystem with DDD type-safety principles:
 
 ---
 
+### 🚨 #8: Strict CQRS Persistence — Segregate Write (*RepositoryInterface) and Read (*QueryInterface)
+
+Combining write operations and read queries into a single interface is strictly forbidden. Persistence interfaces must ALWAYS be segregated into distinct Read and Write patterns:
+
+- ❌ **Strictly forbidden**: Defining a monolithic interface containing both `save()` and read projection queries (`findAll()`, `search()`, `findByX()`).
+- ✅ **Write Interface — `*RepositoryInterface` (Domain Port)**:
+  - Injected strictly into **Command Handlers**.
+  - Methods: `save(Entity $entity): void`, `delete(Id $id): void`, and `findById(Id $id): ?Entity` (strictly for loading aggregates to mutate).
+  - Returns `void` for state changes or Domain Entity for aggregate reconstitution.
+- ✅ **Read Interface — `*QueryInterface` (Domain / Application Port)**:
+  - Injected strictly into **Query Handlers**.
+  - Methods: queries returning strongly-typed `ReadModel` (`*RM`), `array<ReadModel>`, or scalars.
+  - ❌ **FORBIDDEN from returning Domain Entities** (avoids domain model leakage into presentation and optimizes query performance).
+
+---
+
 ## 🆔 Dual Identification System (Internal vs External ID)
 
 When the system interacts across multiple systems or external applications:

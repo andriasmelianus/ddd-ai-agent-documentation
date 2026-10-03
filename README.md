@@ -54,7 +54,7 @@ If you are an AI Agent assigned to a project adopting these standards, **FOLLOW 
 
 ---
 
-## 🚨 Summary of 7 Critical Rules (Golden Rules)
+## 🚨 Summary of 8 Critical Rules (Golden Rules)
 
 ```
 1. STRICT CQRS      : Commands ALWAYS return void (IDs generated BEFORE dispatch).
@@ -64,6 +64,7 @@ If you are an AI Agent assigned to a project adopting these standards, **FOLLOW 
 5. INVARIANT ENTITY : Entities use private constructors; use create() and reconstitute() (NO Reflection).
 6. THIN ACTIONS     : Actions ≤ 20 lines, no business logic, ALWAYS return Custom Resource (XxxRes).
 7. TYPED REQUESTS   : Requests have rules() for HTTP format and getDto() for strongly-typed DTOs.
+8. CQRS PERSISTENCE: Strictly segregated into *RepositoryInterface (Write) and *QueryInterface (Read).
 ```
 
 ---
